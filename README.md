@@ -6,12 +6,12 @@ KNOX layer 1 team B development
 Run the following commands inside the repository folder.
 
 ```
-chmod x+ makeEnv.sh
+chmod +x makeEnv.sh
 ./makeEnv.sh
 ```
 
 
-The environment is calle 'knox-b'.
+The environment is called 'knox-b'.
 To activate it type the following command:
 ```
 conda activate knox-b
