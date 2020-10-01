@@ -1,13 +1,20 @@
 from bs4 import BeautifulSoup as soup
 from urllib.request import urlopen as uReq
 import requests
+import os
 
-FOLDER = 'test/'
+FOLDER = 'PDF/'
 
 def main():
     # read all links
     file1 = open('ioilinks.txt', 'r') 
     Lines = file1.readlines() 
+
+    # check if a folder for pdf is made
+    cwd = os.getcwd()
+    if not os.path.exists(os.path.join(cwd,FOLDER)):
+        os.mkdir(os.path.join(cwd,FOLDER))
+        
 
     # set count
     count = 1
