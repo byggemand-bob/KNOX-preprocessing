@@ -3,16 +3,20 @@ KNOX layer 1 team B development
 
 
 # Anaconda Environment
+Make sure Anaconda 3 is installed
+
 Run the following commands inside the repository folder.
 
 ```
-chmod +x makeEnv.sh
-./makeEnv.sh
+conda create -n knox_b python=3.8
 ```
 
-
-The environment is called 'knox-b'.
-To activate it type the following command:
+Activate the conda environment:
 ```
-conda activate knox-b
+conda activate knox_b
+```
+
+Install dependencies
+```
+pip install -r requirements.txt
 ```
