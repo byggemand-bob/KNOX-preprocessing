@@ -130,4 +130,4 @@ dmypy.json
 
 
 #PDF files
-.pdf
+*.pdf
