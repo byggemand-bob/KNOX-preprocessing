@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```
 # Source Data IO
 
-Use the following steps to follow setps.
+Use the following steps to install the IO library.
 
 ## Using
 First add the custom index url to your pip.conf run `pip3.8 config list -v` to find the approperiate config file. Insert the following:
