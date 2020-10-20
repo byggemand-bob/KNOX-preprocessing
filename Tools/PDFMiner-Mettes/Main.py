@@ -24,7 +24,10 @@ start_time = time.time()
 
 def main():
     DeleteImagesInFolder()
+    print("Deleting and creating folders finished --- %s seconds ---" % (time.time() - start_time))
+
     ConvertPageToImage()
+    print("Converting all PDF pages to PNGs finished --- %s seconds ---" % (time.time() - start_time))
 
     os.chdir(local_path_to_start_directory)
 
@@ -64,9 +67,10 @@ def main():
 
                         SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage)
                         
+                        print("Finished page " + str(PageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
                         PageNum = PageNum + 1
 
-    print("Process finished --- %s seconds ---" % (time.time() - start_time))
+    print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
 
 def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage):
@@ -75,7 +79,7 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
     colorBlack = (0, 0, 0) #black - text
     colorBlue = (255, 0, 0) #blue - figure
     colorGreen = (0, 255, 0) #green - image
-    
+
     index = 1
     figureIndex = 1
     for lobj in layout:
@@ -101,8 +105,6 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
                         # text_file.write(encodedABCoords) #coordsab
                         # text_file.write(encodedText) #text
 
-                        # EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlack)
-                        # index = index + 1
 
         elif isinstance(lobj, LTImage):
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
@@ -112,6 +114,7 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
 
             index = index + 1
             figureIndex = figureIndex + 1
+
 
         elif isinstance(lobj, LTFigure):
             for inner_obj in lobj:
@@ -124,14 +127,14 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
                     index = index + 1
                     figureIndex = figureIndex + 1
                 
-                elif isinstance(inner_obj, LTCurve):
+                if isinstance(inner_obj, LTCurve):
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
 
                     EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlue)
                     #SaveFigure(inner_obj, imageName, figureIndex)
 
                     index = index + 1
-                    figureIndex = figureIndex + 1
+                    #figureIndex = figureIndex + 1
 
 
         elif isinstance(lobj, LTLine):
@@ -141,7 +144,7 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
             #SaveFigure(lobj, imageName, figureIndex)
 
             index = index + 1
-            figureIndex = figureIndex + 1
+            #figureIndex = figureIndex + 1 
 
                         
         elif isinstance(lobj, LTRect):
@@ -151,7 +154,9 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
             #SaveFigure(lobj, imageName, figureIndex)
 
             index = index + 1
-            figureIndex = figureIndex + 1
+            #figureIndex = figureIndex + 1
+
+    print("There were " + str(index) + " objects on this page")
 
 
 def SaveFigure(lobj, imageName, figureIndex):
