@@ -1,9 +1,8 @@
-# KNOX-preprocessing
-KNOX layer 1 team B development
 
+# Setup
 
-# Anaconda Environment
-Make sure Anaconda 3 is installed
+## Anaconda Environment and dependencies
+Install Anaconda
 
 Run the following commands inside the repository folder.
 
@@ -11,10 +10,12 @@ Run the following commands inside the repository folder.
 conda create -n knox_b python=3.8
 ```
 
+
 Activate the conda environment:
 ```
 conda activate knox_b
 ```
+
 
 Install dependencies
 ```
