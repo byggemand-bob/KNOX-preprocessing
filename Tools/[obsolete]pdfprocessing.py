@@ -15,11 +15,11 @@ for root, dirs, files in os.walk(local_path_to_pdf_folder):
 
             #Convert to image:
             doc = fitz.open(local_path_to_pdf_folder + "\\" + pdfName)
-            number_of_pagess = doc.pageCount
+            number_of_pages = doc.pageCount
 
             os.chdir(local_path_to_start_directory + "\\Output_Images\\")
 
-            for x in range(number_of_pagess):
+            for x in range(number_of_pages):
                 page = doc.loadPage(x)
                 pix = page.getPixmap(matrix = mat)
                 outputName = pdfName.replace(".pdf", "") + str(x+1) + ".png"
