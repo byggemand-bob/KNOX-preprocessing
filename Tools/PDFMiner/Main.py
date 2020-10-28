@@ -18,7 +18,7 @@ start_time = time.time()
 
 def main(args):
     IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.convert_dir(args.input, os.path.join(args.output, 'Images'))
+    pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
 
     for file in os.listdir(args.output):
         if file.endswith(".pdf"):
