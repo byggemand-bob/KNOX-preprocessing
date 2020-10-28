@@ -1,8 +1,10 @@
 import os
 import fitz
 import argparse
+import concurrent.futures as cf
 
 def convert(file: str, out_dir: str, zoom: int = 3):
+    print(file)
     mat = fitz.Matrix(zoom, zoom)
 
     # Open image and get page count
@@ -17,19 +19,25 @@ def convert(file: str, out_dir: str, zoom: int = 3):
         pix.writePNG(os.path.join(out_dir, outputName))
 
 def convert_dir(in_dir: str, out_dir: str, zoom: int = 3):
-    # Make sure that input dir exists
+    """ # Make sure that input dir exists
     if not os.path.exists(in_dir):
         raise OSError("Directory not found.")
 
-
     # Make sure that output exists. If not, create the dir.
     if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
+        os.mkdir(out_dir) """
 
-    # Go through every file in the input dir and convert.
+    # Go through every file in the input dir and append to list.
+    files = []
+    out_dirs = []
     for file in os.listdir(in_dir,):
         if file.endswith(".pdf"):
-            convert(os.path.join(in_dir, file), out_dir, zoom)
+            files.append(os.path.join(in_dir,file))
+            out_dirs.append(out_dir)
+
+    with cf.ProcessPoolExecutor() as executor:
+        executor.map(convert, files, out_dirs)
+
 
 
 if __name__ == "__main__":
