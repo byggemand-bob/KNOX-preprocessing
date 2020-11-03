@@ -26,8 +26,7 @@
             },
             "required": [
                 "app",
-                "version",
-                "generatedAt"
+                "version"
             ]
         },
         "content": {
@@ -42,21 +41,52 @@
                 "title": {
                     "type": "string"
                 },
-                "text": {
-                    "type": "string"
+                "sections": {
+                    "type": "object",
+                    "items": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "page": {
+                                    "type": "string"
+                                },
+                                "header": {
+                                    "type": "string"
+                                },
+                                "paragraphs": {
+                                    "type": "object",
+                                    "items": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "page": {
+                                                    "type": "string"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "text"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "paragraphs"
+                            ]
+                        }
+                    ]
                 }
             },
             "required": [
-                "publisher",
-                "publishedAt",
-                "text"
+                "sections"
             ]
         }
     },
     "required": [
         "type",
-        "shcemaLocation",
-        "schemaVersion",
         "generator",
         "content"
     ]
