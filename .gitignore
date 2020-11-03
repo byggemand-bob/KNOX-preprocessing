@@ -128,9 +128,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+#Vscode
+.vscode
 
 #PDF files
 *.pdf
+
+#PDF files
+*.png
 
 #Ignore extracted text files
 Tools/TextExtraction/PDF_Extract_Multiple_Text/TEXTs*
