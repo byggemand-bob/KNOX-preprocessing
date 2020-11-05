@@ -134,6 +134,9 @@ dmypy.json
 #PDF files
 *.pdf
 
+#PDF files
+*.png
+
 #Ignore extracted text files
 Tools/TextExtraction/PDF_Extract_Multiple_Text/TEXTs*
 Tools/TextExtraction/PDF_Extract_multiple_With_Layout/TEXTs*
