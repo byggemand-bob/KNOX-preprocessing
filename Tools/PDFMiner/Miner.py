@@ -22,7 +22,7 @@ def main(args):
 
     for file in os.listdir(args.output):
         if file.endswith(".pdf"):
-            break
+            print('pdf file found')
             fileName = os.path.basename(file)
             pages, interpreter, device = init_file(args, fileName)
 
