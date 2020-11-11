@@ -39,37 +39,28 @@ class PDF_page:
         #Prerequisites for image processing
         self.image_name = owner.file_name.replace(".pdf", "_page") + str(len(owner.pages) + 1) + ".png"
 
-        first_image = cv2.imread(os.path.join(os.path.join(args.output, IMAGES), self.image_name))
-        self.height, self.width = first_image.shape[:2]
+        self.first_image = cv2.imread(os.path.join(os.path.join(args.output, IMAGES), self.image_name))
+        self.height, self.width = self.first_image.shape[:2]
 
         self.actualHeightModifier = self.height/self.PDFfile_height
         self.actualWidthModifier = self.width/self.PDFfile_width
 
 
 def main(args):
+    pageNum = 0
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
     for file in os.listdir(args.input):
         if file.endswith(".pdf"):
             print('pdf file found')
             current_PDF = PDF_file(file, args)
+            pageNum = pageNum + 1
+            print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
             print('done structure')
-
-
-    for file in os.listdir(args.output):
-        break
-        if file.endswith(".pdf"):
-            print('pdf file found')
-            current_PDF = PDF_file
-
-            PageNum = 1
-            
-
-            SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage)
-                
-            print("Finished page " + str(PageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
-            PageNum = PageNum + 1
-
+            for page in current_PDF.pages:
+                print('got here')
+                SearchPage(page, args)
+               
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
 def init_file(args, fileName):
@@ -80,7 +71,7 @@ def init_file(args, fileName):
     return PDFPage.get_pages(fp), PDFPageInterpreter(rsrcmgr, device), device
 
 
-def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage):
+def SearchPage(page, args):
     
     #colorBlack = (255, 255, 255) #black - text
     colorBlack = (0, 0, 0) #black - text
@@ -91,12 +82,12 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
     figureIndex = 1
 
     #find all images and figures first.
-    for lobj in layout:
+    for lobj in page.layout:
         if isinstance(lobj, LTImage):
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
 
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen, -1)
-            SaveFigure(lobj, imageName, figureIndex)
+            EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorGreen, -1, args)
+            SaveFigure(lobj, page.imageName, figureIndex)
 
             index = index + 1
             figureIndex = figureIndex + 1
@@ -104,8 +95,8 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
         elif isinstance(lobj, LTRect):
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
 
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen, -1)
-            #SaveFigure(lobj, imageName, figureIndex)
+            EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorGreen, -1, args)
+            #SaveFigure(lobj, page.imageName, figureIndex)
 
             index = index + 1
             #figureIndex = figureIndex + 1
@@ -115,21 +106,21 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
                 if isinstance(inner_obj, LTImage):
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
 
-                    EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen, -1)
-                    SaveFigure(inner_obj, imageName, figureIndex)
+                    EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorGreen, -1, args)
+                    SaveFigure(inner_obj, page, figureIndex)
 
                     index = index + 1
                     figureIndex = figureIndex + 1
 
     #find all lines and curves.
-    for lobj in layout:
+    for lobj in page.layout:
         if isinstance(lobj, LTFigure):
             for inner_obj in lobj:              
                 if isinstance(inner_obj, LTCurve):
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
 
-                    EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlue, 40)
-                    #SaveFigure(inner_obj, imageName, figureIndex)
+                    EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorBlue, 40, args)
+                    #SaveFigure(inner_obj, page.imageName, figureIndex)
 
                     index = index + 1
                     #figureIndex = figureIndex + 1
@@ -138,15 +129,15 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
         elif isinstance(lobj, LTLine):
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
 
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlue, 40)
-            #SaveFigure(lobj, imageName, figureIndex)
+            EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorBlue, 40, args)
+            #SaveFigure(lobj, page.imageName, figureIndex)
 
             index = index + 1
             #figureIndex = figureIndex + 1 
 
 
     #find all text.
-    for lobj in layout:
+    for lobj in page.layout:
         if isinstance(lobj, LTTextBox):
             #x0, y0, x1, y1, text = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3], lobj.get_text()
 
@@ -157,7 +148,7 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
 
                     if not(text == "\n" or text == " " or text == "\t" or text == "  " or text == ""):# or text == "•" or text == "• "):
 
-                        EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlack, -1)
+                        EditImage(page, x0, (page.PDFfile_height-y0), x1, (page.PDFfile_height-y1), index, colorBlack, -1, args)
                         index = index + 1
                                         
                         #encodedText = text.encode(encoding='UTF-16',errors='strict')
@@ -171,28 +162,28 @@ def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightMod
     print("There were " + str(index) + " objects on this page")
 
 
-def SaveFigure(lobj, imageName, figureIndex):
+def SaveFigure(lobj, page, figureIndex):
     file_stream = lobj.stream.get_rawdata()
     fileExtension = IO_handler.get_file_extension(file_stream[0:4])
 
     if(fileExtension != None):
-        figureName = imageName.replace(".png", "") + str(figureIndex) + fileExtension
+        figureName = page.image_name.replace(".png", "") + str(figureIndex) + fileExtension
 
-        file_obj = open(args.output[0] + figureName, 'wb')
+        file_obj = open(os.path.join(os.path.join(args.output, FIGURES), figureName), 'wb')
         file_obj.write(lobj.stream.get_rawdata())
         file_obj.close()
 
-def EditImage(FileName, x0, y0, x1, y1, PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, color):
-    start_point = (round(x0*actualWidthModifier), round(y0*actualHeightModifier))
-    end_point = (round(x1* actualWidthModifier), round(y1*actualHeightModifier))
+def EditImage(page, x0, y0, x1, y1, index, color, thickness, args):
+    start_point = (round(x0*page.actualWidthModifier), round(y0*page.actualHeightModifier))
+    end_point = (round(x1* page.actualWidthModifier), round(y1*page.actualHeightModifier))
 
     if(index == 1):
-        image = cv2.rectangle(Firstimage, start_point, end_point, color, thickness)
+        image = cv2.rectangle(page.first_image, start_point, end_point, color, thickness)
     else:
-        image = cv2.imread(local_path_to_imageFilled_folder + FileName)
+        image = cv2.imread(os.path.join(args.output, os.path.join(ANNOTATED, page.image_name)))
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
 
-    cv2.imwrite(local_path_to_imageFilled_folder + FileName, image)
+    cv2.imwrite(os.path.join(args.output, os.path.join(ANNOTATED, page.image_name)), image)
 
 if __name__ == '__main__':
    # Arguments
