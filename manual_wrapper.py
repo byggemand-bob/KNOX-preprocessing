@@ -1,6 +1,7 @@
 from knox_source_data_io.io_handler import *
 from knox_source_data_io.models.model import Model
 import os
+import text_extraction_example
 
 # Make an object which holds information about the content
 # It should be expanded and iterated upon when we have more work
@@ -55,7 +56,7 @@ class Table(Illustration):
 def create_output(manual, schemaPath, outputPath):
     #Fill with more information here
     export_able_object = Manual()
-    
+
     # Generate
     handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at="", version="1.0"), schemaPath)
     dirname = os.path.dirname(__file__)
