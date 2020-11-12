@@ -1,9 +1,8 @@
-
 requests
 numpy
 beautifulsoup4
 pdfminer
 PyMuPDF
 opencv-python
-pip install torch torchvision
+torch torchvision
 
