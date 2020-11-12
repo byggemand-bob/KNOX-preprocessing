@@ -16,11 +16,32 @@ local_path_to_pdf_folder = local_path_to_start_directory + "\\PDFs\\"
 local_path_to_image_folder = local_path_to_start_directory + "\\Images\\"
 local_path_to_imageFilled_folder = local_path_to_start_directory + "\\ImagesFilled\\"
 local_path_to_Figure_folder = local_path_to_start_directory + "\\Figures\\"
+local_path_to_LineCoords_folder = local_path_to_start_directory + "\\LineCoords\\"
 
 zoom = 3  # Set PNG resolution here
 mat = fitz.Matrix(zoom, zoom)
 
 start_time = time.time()
+
+LTImageList = []
+LTRectList = []
+LTCurveList = []
+LTLineList = []
+LTTextLineList = []
+
+TableLines = []
+
+class PDFMinerObject:
+    def __init__(self, x0, y0, x1, y1):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+class LT_Line_Class(PDFMinerObject):
+    
+    def To_String(self):
+        return "Coord: (({0}, {1}), ({2}, {3}))".format(round(self.x0), round(self.y0), round(self.x1), round(self.y1))
 
 def main():
     DeleteImagesInFolder()
@@ -65,96 +86,81 @@ def main():
                         actualHeightModifier = height/PDFfile_height
                         actualWidthModifier = width/PDFfile_width
 
-                        SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage)
-                        
+                        #SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage)
+                        SearchPage(layout, imageName)
+                        LookThroughLists(imageName.replace(".png", ""))
+                        PaintPNGs(imageName, PDFfile_height, actualHeightModifier, actualWidthModifier, Firstimage)
+
                         print("Finished page " + str(PageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
                         PageNum = PageNum + 1
 
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
 
-def SearchPage(layout, imageName, PDFfile_height, PDFfile_width, actualHeightModifier, actualWidthModifier, Firstimage):
-    
-    #colorBlack = (255, 255, 255) #black - text
-    colorBlack = (0, 0, 0) #black - text
-    colorBlue = (255, 0, 0) #blue - figure
-    colorGreen = (0, 255, 0) #green - image
+def SearchPage(layout, imageName):
+
+    LTImageList.clear()
+    LTRectList.clear()
+    LTCurveList.clear()
+    LTLineList.clear()
+    LTTextLineList.clear()
 
     index = 1
     figureIndex = 1
+    #find all images and figures first.
     for lobj in layout:
-        if isinstance(lobj, LTTextBox):
-
-            #x0, y0, x1, y1, text = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3], lobj.get_text()
-
-            for obj in lobj:
-                if isinstance(obj, LTTextLine):
-
-                    x0, y0, x1, y1, text = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3], obj.get_text().rstrip("\n")
-
-                    if not(text == "\n" or text == " " or text == "\t" or text == "  " or text == ""):# or text == "•" or text == "• "):
-
-                        EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlack)
-                        index = index + 1
-                                        
-                        #encodedText = text.encode(encoding='UTF-16',errors='strict')
-                        #encodedCoords = ("At" + str(x0) + ", " + str(PDFfile_height-(y0-30)) + "\n").encode(encoding='UTF-16',errors='strict')
-                        #encodedABCoords = ("And " + str(x1) + ", " + str(PDFfile_height-(y1-30)) + " is text:\n").encode(encoding='UTF-16',errors='strict')
-
-                        # text_file.write(encodedCoords) #coords
-                        # text_file.write(encodedABCoords) #coordsab
-                        # text_file.write(encodedText) #text
-
-
-        elif isinstance(lobj, LTImage):
-            x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen)
-            SaveFigure(lobj, imageName, figureIndex)
-
+        if isinstance(lobj, LTImage):
             index = index + 1
             figureIndex = figureIndex + 1
 
+            x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
+            newLTImage = PDFMinerObject(x0, y0, x1, y1)
+            LTImageList.append(newLTImage)
+            SaveFigure(lobj, imageName, figureIndex)
 
-        elif isinstance(lobj, LTFigure):
+
+        if isinstance(lobj, LTRect):
+            index = index + 1
+            x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
+            newLTRect = PDFMinerObject(x0, y0, x1, y1)
+            LTRectList.append(newLTRect)
+
+
+        if isinstance(lobj, LTFigure):
             for inner_obj in lobj:
                 if isinstance(inner_obj, LTImage):
-                    x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
-
-                    EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen)
-                    SaveFigure(inner_obj, imageName, figureIndex)
-
                     index = index + 1
                     figureIndex = figureIndex + 1
-                
-                if isinstance(inner_obj, LTCurve):
+
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
+                    newLTImage = PDFMinerObject(x0, y0, x1, y1)
+                    LTImageList.append(newLTImage)
+                    SaveFigure(inner_obj, imageName, figureIndex)
 
-                    EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlue)
-                    #SaveFigure(inner_obj, imageName, figureIndex)
 
+                #find all lines and curves.
+                elif isinstance(inner_obj, LTCurve):
                     index = index + 1
-                    #figureIndex = figureIndex + 1
+                    x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
+                    newLTCurve = PDFMinerObject(x0, y0, x1, y1)
+                    LTCurveList.append(newLTCurve)
 
 
-        elif isinstance(lobj, LTLine):
-            x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorBlue)
-            #SaveFigure(lobj, imageName, figureIndex)
-
+        if isinstance(lobj, LTLine):
             index = index + 1
-            #figureIndex = figureIndex + 1 
-
-                        
-        elif isinstance(lobj, LTRect):
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
+            newLTLine = LT_Line_Class(x0, y0, x1, y1)
+            LTLineList.append(newLTLine)
 
-            EditImage(imageName, x0, (PDFfile_height-y0), x1, (PDFfile_height-y1), PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, colorGreen)
-            #SaveFigure(lobj, imageName, figureIndex)
 
-            index = index + 1
-            #figureIndex = figureIndex + 1
+        #find all text.
+        if isinstance(lobj, LTTextBox):
+            for obj in lobj:
+                if isinstance(obj, LTTextLine):
+                    index = index + 1
+                    x0, y0, x1, y1 = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]
+                    newLTTextBox = PDFMinerObject(x0, y0, x1, y1)
+                    LTTextLineList.append(newLTTextBox)
 
     print("There were " + str(index) + " objects on this page")
 
@@ -185,35 +191,78 @@ def GetFileExtension(stream_first_4_bytes):
     return file_type
 
 
-def EditImage(FileName, x0, y0, x1, y1, PDFfile_width, PDFfile_height, index, actualHeightModifier, actualWidthModifier, Firstimage, color):
-    # image = cv2.imread(local_path_to_image_folder + FileName)
+def LookThroughLists(imageName):
 
-    # height, width = image.shape[:2]
+    LookThroughLTLineList(imageName)
 
-    # actualHeightModifier = height/PDFfile_height
-    # actualWidthModifier = width/PDFfile_width
+    
+def LookThroughLTLineList(imageName):
 
-    start_point = (round(x0*actualWidthModifier), round(y0*actualHeightModifier))
-    end_point = (round(x1* actualWidthModifier), round(y1*actualHeightModifier))
+    LineDictionary = {}
+    for LT_Line_element in LTLineList:
+        if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
+            if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
+                key = str(round(LT_Line_element.x0)) + str(round(LT_Line_element.x1))
+                if key in LineDictionary:
+                    LineDictionary[key].append(LT_Line_element) 
+                else:
+                    LineDictionary[key] = [LT_Line_element]
+    
+    #print(str(len(LineDictionary)))
+    FindTables(LineDictionary)
 
-    # print(FileName)
-    # print("PDF x0: " + str(x0))
-    # print("PDF y0: " + str(y0))
-    # print("PDF x1: " + str(x1))
-    # print("PDF y1: " + str(y1))
-    # print("Start p: " + str(start_point))
-    # print("end p: " + str(end_point))
+    f = open(os.path.join(local_path_to_LineCoords_folder, imageName) + ".txt", "w")
+    f.write(str(len(LineDictionary)) + "\n")
+    for dicelement in LineDictionary.values():
+        for element in dicelement:
+            f.write(element.To_String() + "\n")
+            
+    f.close()
 
-    # color = (0, 0, 0) 
-    thickness = 3
 
-    if(index == 1):
-        image = cv2.rectangle(Firstimage, start_point, end_point, color, thickness)
-    else:
-        image = cv2.imread(local_path_to_imageFilled_folder + FileName)
+def FindTables(LineDictionary):
+    for dicelement in LineDictionary.values():
+        print(str(len(dicelement)))
+        #for element in dicelement:
+            
+
+
+def PaintPNGs(FileName, PDFfile_height, actualHeightModifier, actualWidthModifier, Firstimage):
+
+    thickness = -1
+    lineThickness = 40
+    image = cv2.rectangle(Firstimage, (0,0), (0,0), (255, 255, 255), 1)
+
+    #LTImage:
+    colorGreen = (0, 255, 0) #green - image
+    image = Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, LTImageList, colorGreen, thickness)    
+
+    #LTRect:
+    image = Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, LTRectList, colorGreen, thickness)    
+
+    #LTCurve:
+    colorBlue = (255, 0, 0) #blue - figure
+    image = Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, LTCurveList, colorBlue, lineThickness)    
+
+    #LTLines:
+    image = Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, LTLineList, colorBlue, lineThickness)    
+
+    #LTTextlines:
+    colorBlack = (0, 0, 0) #black - text
+    #colorWhite = (255, 255, 255) #white
+    image = Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, LTTextLineList, colorBlack, thickness)    
+
+    cv2.imwrite(local_path_to_imageFilled_folder + FileName, image) #save picture
+
+
+def Paint(image, actualWidthModifier, PDFfile_height, actualHeightModifier, FileName, objectList, color, thickness):
+    for text_line_element in objectList:
+        start_point = (round(text_line_element.x0*actualWidthModifier), round((PDFfile_height-text_line_element.y0)*actualHeightModifier))
+        end_point = (round(text_line_element.x1* actualWidthModifier), round((PDFfile_height-text_line_element.y1)*actualHeightModifier))
+
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
-
-    cv2.imwrite(local_path_to_imageFilled_folder + FileName, image)
+    
+    return image
 
 
 def DeleteImagesInFolder():

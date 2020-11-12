@@ -4,6 +4,7 @@ import requests
 import os
 
 FOLDER = 'PDF/'
+DOMAIN = 'https://www.grundfos.com'
 
 def main():
     # read all links
@@ -21,30 +22,23 @@ def main():
 
     for line in Lines: 
         # print count and url
-        print("Line{}: {}".format(count, line.strip())) 
+        print("Dowloading {}".format(line.strip())) 
         count +=1
 
         # get a file name
-        productName = findfilename(line)
-
-        if '.pdf' in productName:
-    
-            with open(FOLDER + productName, 'wb') as file:
+        productName = findfilename(line.rstrip("\n"))
+        
+        with open(FOLDER + productName, 'wb') as file:
                 response = requests.get(line)
                 file.write(response.content)
-        elif '.zip' in line:
-            with open(FOLDER + productName, 'wb') as file:
-                response = requests.get(line)
-                file.write(response.content)
-        else:
-            print('unknown file type: ' + line)
-            break;
+                
+    print(count + " files downloaded")
 
 def findNextPage(page_soup):
     try:
         pages = page_soup.findAll("div",{"class":"sp_pagination section"})
         allPages = pages[0].div.ul.findAll("li")
-        return 'https://www.grundfos.com' + allPages[len(allPages)-1].a['href']
+        return DOMAIN + allPages[len(allPages)-1].a['href']
     except:
         return None
 
