@@ -7,7 +7,7 @@ import numpy as ny
 import time
 import shutil
 import IO_handler
-import pdf2png
+import util.pdf2png as pdf2png
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTText, LTChar, LTFigure, LTImage, LTRect, LTCurve, LTLine
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
@@ -139,13 +139,13 @@ def EditImage(FileName, x0, y0, x1, y1, PDFfile_width, PDFfile_height, index, ac
     start_point = (round(x0*actualWidthModifier), round(y0*actualHeightModifier))
     end_point = (round(x1* actualWidthModifier), round(y1*actualHeightModifier))
 
-    if(index == 1):
+    """ if(index == 1):
         image = cv2.rectangle(Firstimage, start_point, end_point, color, thickness)
     else:
         image = cv2.imread(local_path_to_imageFilled_folder + FileName)
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
 
-    cv2.imwrite(local_path_to_imageFilled_folder + FileName, image)
+    cv2.imwrite(local_path_to_imageFilled_folder + FileName, image) """
 
 if __name__ == '__main__':
    # Arguments

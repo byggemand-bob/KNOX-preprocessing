@@ -229,13 +229,12 @@ def LookThroughLTLineList(imageName):
     #print(str(len(LineDictionary)))
     #FindTables(LineDictionary)
 
-    f = open(os.path.join(local_path_to_LineCoords_folder, imageName) + ".txt", "w")
+    """ f = open(os.path.join(local_path_to_LineCoords_folder, imageName) + ".txt", "w")
     f.write(str(len(LineDictionary)) + "\n")
     for dicelement in LineDictionary.values():
         for element in dicelement:
-            f.write(element.To_String() + "\n")
-            
-    f.close()
+            f.write(element.To_String() + "\n")   
+    f.close() """
 
 #def FindTables(LineDictionary):
     #for dicelement in LineDictionary.values():
