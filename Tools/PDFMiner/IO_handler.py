@@ -23,6 +23,7 @@ def mkdirs(output):
     os.mkdir(os.path.join(output, 'images'))
     os.mkdir(os.path.join(output, 'images_annotated'))
     os.mkdir(os.path.join(output, 'figures'))
+    os.mkdir(os.path.join(output, 'line_cords'))
 
 def initialize():
     # Arguments
