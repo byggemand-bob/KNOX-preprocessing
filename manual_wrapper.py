@@ -2,6 +2,7 @@ from knox_source_data_io.io_handler import *
 from knox_source_data_io.models.model import Model
 import os
 import text_extraction_example
+import datetime
 
 # Make an object which holds information about the content
 # It should be expanded and iterated upon when we have more work
@@ -11,12 +12,11 @@ class Manual(Model):
     title: str
     sections: []
 
-    def __init__(self, values: dict = None, **kwargs):
-        values = values if values is not None else kwargs
-        self.text = []
-    
-    #def __init__(self, file_sections):
-        #self.sections = file_sections
+    def __init__(self, file_publisher, file_published_at, file_title, file_sections):
+        self.publisher = file_publisher
+        self.published_at = file_published_at
+        self.title = file_title
+        self.sections = file_sections
 
 class Section():
     header: str
@@ -37,35 +37,31 @@ class Paragraph():
         self.text = file_text
 
 class Illustration():
-    pages: str
-    path: str
+    pages: []
+    image_bytes: str
 
 class Figure(Illustration):
 
-    def __init__(self, page_span, figure_path):
+    def __init__(self, page_span, figure_bytes):
         self.pages = page_span
-        self.path = figure_path
+        self.image_bytes = figure_bytes
 
 class Table(Illustration):
 
-    def __init__(self, page_span, table_path):
+    def __init__(self, page_span, table_bytes):
         self.pages = page_span
-        self.path = table_path
+        self.image_bytes = table_bytes
 
 # Input: Some object, schema location, output path (the written output)
-def create_output(manual, schemaPath, outputPath):
+def create_output(manual, schema_path, output_path):
     #Fill with more information here
-    export_able_object = Manual()
+    export_object = Manual()
 
     # Generate
-    handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at="", version="1.0"), schemaPath)
+    handler = IOHandler(Generator(app="Grundfos_manuals_handler", generated_at=datetime.datetime.now(), version="1.0"), schema_path)
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, outputPath) #Rename when we know what the location is
+    filename = os.path.join(dirname, output_path) #Rename when we know what the location is
     
     # Serialize object to json
     with open(filename, 'w', encoding='utf-8') as outfile:
-        handler.write_json(export_able_object, outfile)
-
-#def create_objects():
-    #If the data is not in the models in this file,
-    #Create some function to do so here
+        handler.write_json(export_object, outfile)
