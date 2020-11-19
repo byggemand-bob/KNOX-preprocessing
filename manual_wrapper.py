@@ -58,7 +58,7 @@ def create_output(manual, schema_path, output_path):
     export_object = Manual()
 
     # Generate
-    handler = IOHandler(Generator(app="Grundfos_manuals_handler", generated_at=datetime.datetime.now(), version="1.0"), schema_path)
+    handler = IOHandler(Generator(app="Grundfos_manuals_handler", generated_at=datetime.datetime.now(), version=1.0), schema_path)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, output_path) #Rename when we know what the location is
     
