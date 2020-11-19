@@ -13,6 +13,7 @@ from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTText, LTChar, LTFigure, LTImage, LTRect, LTCurve, LTLine
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
+from functools import cmp_to_key
 
 FIGURES = 'figures'
 IMAGES = 'images'
@@ -64,12 +65,11 @@ LTRectList = []
 LTCurveList = []
 LTLineList = []
 LTTextLineList = []
+TableLines = []
 
 def main(args):
-    pageNum = 0
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
-    print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
 
     files = []
     list_args = []
@@ -83,14 +83,15 @@ def main(args):
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
-def doshit(file, args):
-    print('done structure')
+def doshit(file, args): #TODO: Renames
+    pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
-        print('got here')
         SearchPage(page, args)
-        #LookThroughLTLineList()
+        LookThroughLTLineList(page.image_name, args)
         PaintPNGs(page, args)
+        print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
+        pageNum = pageNum + 1
 
 def init_file(args, fileName):
     fp = open(os.path.join(args.input, fileName), 'rb')
@@ -195,15 +196,19 @@ def PaintPNGs(page, args):
     image = Paint(image, page, LTCurveList, colorBlue, lineThickness)    
 
     #LTLines:
-    image = Paint(image, page, LTLineList, colorBlue, lineThickness)    
+    image = Paint(image, page, LTLineList, colorBlue, lineThickness)  
+
+    #table lines:
+    colorRed = (0,0,255)
+    image = Paint(image, page, TableLines, colorRed, 10)      
 
     #LTTextlines:
     colorBlack = (0, 0, 0) #black - text
     #colorWhite = (255, 255, 255) #white
     image = Paint(image, page, LTTextLineList, colorBlack, thickness)    
     print(page.image_name)
-    cv2.imwrite(os.path.join(os.path.join(args.output, ANNOTATED), page.image_name), image) #save picture
 
+    cv2.imwrite(os.path.join(os.path.join(args.output, ANNOTATED), page.image_name), image) #save picture
 
 def Paint(image, page, objectList, color, thickness):
     for text_line_element in objectList:
@@ -214,32 +219,62 @@ def Paint(image, page, objectList, color, thickness):
     
     return image
 
-def LookThroughLTLineList(imageName):
+def LookThroughLTLineList(imageName, args):
+    coord_cmp_key = cmp_to_key(cmp_coord)
+    LTLineList.sort(key=coord_cmp_key)
 
-    LineDictionary = {}
+    print(str(len(LTLineList)))
+
+    Line_Dictionary = {}
     for LT_Line_element in LTLineList:
         if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
-            if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
-                key = str(round(LT_Line_element.x0)) + str(round(LT_Line_element.x1))
-                if key in LineDictionary:
-                    LineDictionary[key].append(LT_Line_element) 
-                else:
-                    LineDictionary[key] = [LT_Line_element]
-    
-    #print(str(len(LineDictionary)))
-    #FindTables(LineDictionary)
+            if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 2): #Only lines longer than 2 (points)
+                newHeightCoordinate = True
+                for dicelement in Line_Dictionary.values():
+                    for Line_Dic_element in dicelement:
+                        if((round(LT_Line_element.x0) == round(Line_Dic_element.x1) or round(LT_Line_element.x1) == round(Line_Dic_element.x0)) and round(LT_Line_element.y0) == round(Line_Dic_element.y0)):
+                            newHeightCoordinate = False
+                            key = str(round(LT_Line_element.y0))
+                            if key in Line_Dictionary:
+                                Line_Dictionary[key].append(LT_Line_element) 
+                            else:
+                                Line_Dictionary[key] = [LT_Line_element]
+                            break
+                    if(newHeightCoordinate == False):
+                        break
+                if(newHeightCoordinate == True):
+                    key = str(round(LT_Line_element.y0))
+                    Line_Dictionary[key] = [LT_Line_element]
+        
+    print("Dic lengh:")
+    print(str(len(Line_Dictionary)))
+    for LT_Line_element in Line_Dictionary.values():
+        print(str(len(LT_Line_element)))
 
-    """ f = open(os.path.join(local_path_to_LineCoords_folder, imageName) + ".txt", "w")
-    f.write(str(len(LineDictionary)) + "\n")
-    for dicelement in LineDictionary.values():
+    f = open(os.path.join(os.path.join(args.output, LINES), imageName.replace(".png", "")) + ".txt", "w")
+    f.write(str(len(Line_Dictionary)) + "\n")
+    for dicelement in Line_Dictionary.values():
         for element in dicelement:
             f.write(element.To_String() + "\n")   
-    f.close() """
+    f.close()
 
-#def FindTables(LineDictionary):
-    #for dicelement in LineDictionary.values():
-        #print(str(len(dicelement)))
-        #for element in dicelement:
+    TableLines.clear()
+    for dicelement in Line_Dictionary.values():
+        for element in dicelement:
+            TableLines.append(element)
+
+def cmp_coord(a, b):
+    if a.y0 > b.y0:
+        return 1
+    elif a.y0 == b.y0:
+        if a.x0 > b.x0:
+            return 1
+        elif a.y0 == b.y0:
+            return 0
+        else:
+            return -1
+    else:
+        return -1
 
 if __name__ == '__main__':
     # Arguments
