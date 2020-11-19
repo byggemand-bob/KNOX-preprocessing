@@ -14,6 +14,7 @@ from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTText, LTChar, LTF
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
 from functools import cmp_to_key
+import datastructure
 
 FIGURES = 'figures'
 IMAGES = 'images'
