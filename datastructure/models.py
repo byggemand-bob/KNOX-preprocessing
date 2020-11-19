@@ -1,5 +1,5 @@
 class TextSegment(): 
-    coordinates: Coordinates
+    coordinates: Coordinates()
     header: str
     value: str
 
@@ -10,7 +10,7 @@ class TextSegment():
 
 
 class ImageSegment():
-    coordinates: Coordinates
+    coordinates: Coordinates()
     byte_value: str #bytes
 
     def __init__(self, coordinates, value):
@@ -19,7 +19,7 @@ class ImageSegment():
 
 
 class TableSegment():
-    coordinates: Coordinates
+    coordinates: Coordinates()
     byte_value: str #bytes
 
     def __init__(self, coordinates, value):
