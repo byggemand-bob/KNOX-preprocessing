@@ -61,7 +61,9 @@ class LT_Line_Class(PDFMinerObject):
 
 LTImageList = []
 LTRectList = []
-LTRectLineList = []
+#LTRectLineList = []
+LTRectLineListHorizontal = []
+LTRectLineListVertical = []
 LTCurveList = []
 LTLineList = []
 LTTextLineList = []
@@ -88,6 +90,7 @@ def doshit(file, args): #TODO: Renames
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
+        Flip_Y_Coordinates(page)
         LookThroughLines(page.image_name, args)
         PaintPNGs(page, args)
         print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
@@ -107,7 +110,8 @@ def SearchPage(page, args):
     LTCurveList.clear()
     LTLineList.clear()
     LTTextLineList.clear()
-    LTRectLineList.clear()
+    LTRectLineListHorizontal.clear()
+    LTRectLineListVertical.clear()
 
     index = 1
     figureIndex = 1
@@ -130,10 +134,10 @@ def SearchPage(page, args):
             if(result[0] == True): #it is a line
                 if(result[1] == 1): #horizontal line
                     newLTLine = LT_Line_Class(x0, y0, x1, y0) 
-                    LTRectLineList.append(newLTLine)
+                    LTRectLineListHorizontal.append(newLTLine)
                 elif(result[1] == 2): #vertical line
                     newLTLine = LT_Line_Class(x0, y0, x0, y1) 
-                    LTRectLineList.append(newLTLine)
+                    LTRectLineListVertical.append(newLTLine)
             else:
                 newLTRect = PDFMinerObject(x0, y0, x1, y1)
                 LTRectList.append(newLTRect)
@@ -204,6 +208,20 @@ def SaveFigure(lobj, page, figureIndex, args):
         file_obj.write(lobj.stream.get_rawdata())
         file_obj.close()
 
+def Flip_Y_Coordinates(page):
+    Flip_Y_Coordinate(page, LTImageList)
+    Flip_Y_Coordinate(page, LTRectList)
+    Flip_Y_Coordinate(page, LTRectLineListHorizontal)
+    Flip_Y_Coordinate(page, LTRectLineListVertical)
+    Flip_Y_Coordinate(page, LTCurveList)
+    Flip_Y_Coordinate(page, LTLineList)
+    Flip_Y_Coordinate(page, LTTextLineList)
+
+def Flip_Y_Coordinate(page, object_List):
+    for element in object_List:
+        element.y0 = page.PDFfile_height - element.y0
+        element.y1 = page.PDFfile_height - element.y1
+
 def PaintPNGs(page, args):
     thickness = -1
     lineThickness = 40
@@ -225,7 +243,8 @@ def PaintPNGs(page, args):
     image = Paint(image, page, LTLineList, colorBlue, lineThickness)  
     #LTRectlines:
     color_Light_Blue = (255,191,0)
-    image = Paint(image, page, LTRectLineList, color_Light_Blue, lineThickness)  
+    image = Paint(image, page, LTRectLineListHorizontal, color_Light_Blue, lineThickness) 
+    image = Paint(image, page, LTRectLineListVertical, color_Light_Blue, lineThickness)   
 
     #table lines:
     colorRed = (0,0,255)
@@ -241,8 +260,8 @@ def PaintPNGs(page, args):
 
 def Paint(image, page, objectList, color, thickness):
     for text_line_element in objectList:
-        start_point = (round(text_line_element.x0*page.actualWidthModifier), round((page.PDFfile_height-text_line_element.y0)*page.actualHeightModifier))
-        end_point = (round(text_line_element.x1* page.actualWidthModifier), round((page.PDFfile_height-text_line_element.y1)*page.actualHeightModifier))
+        start_point = (round(text_line_element.x0*page.actualWidthModifier), round(text_line_element.y0*page.actualHeightModifier))
+        end_point = (round(text_line_element.x1* page.actualWidthModifier), round(text_line_element.y1*page.actualHeightModifier))
 
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
     
@@ -251,10 +270,117 @@ def Paint(image, page, objectList, color, thickness):
 def LookThroughLines(imageName, args):
     TableLines.clear()
     LookThroughLTRectLineList(imageName, args)
-    LookThroughLTLineList(imageName, args)
+    #LookThroughLTLineList(imageName, args)
 
 def LookThroughLTRectLineList(imageName, args):
-    print("Hey! :D")
+    Table_Dictionary = {}
+    table_Index_key = 0
+    line_List_Horizontal = LTRectLineListHorizontal.copy()
+    line_List_Vertical = LTRectLineListVertical.copy()
+
+    something_was_changed = False
+
+    while(True):
+        if(something_was_changed == True):
+            something_was_changed = False
+            for LT_Line_element in line_List_Horizontal:
+                result = On_Segment(LT_Line_element, Table_Dictionary)
+                if(result[0] == True):
+                    key = result[1]
+                    if key in Table_Dictionary:
+                        Table_Dictionary[key].append(LT_Line_element) 
+                        line_List_Horizontal.remove(LT_Line_element)
+                        something_was_changed = True
+            for LT_Line_element in line_List_Vertical:
+                result = On_Segment(LT_Line_element, Table_Dictionary)
+                if(result[0] == True):
+                    key = result[1]
+                    if key in Table_Dictionary:
+                        Table_Dictionary[key].append(LT_Line_element) 
+                        line_List_Vertical.remove(LT_Line_element)
+                        something_was_changed = True
+        else:
+            if(len(line_List_Horizontal) > 0):
+                Table_Dictionary[table_Index_key] = [line_List_Horizontal[0]]
+                line_List_Horizontal.remove(line_List_Horizontal[0])
+                table_Index_key = table_Index_key + 1
+                something_was_changed = True
+            else:
+                break
+    
+    for dicelement in Table_Dictionary.values():
+        for element in dicelement:
+            TableLines.append(element)
+
+    #Prints dictionary info:
+    print("Dic lengh:" + str(len(Table_Dictionary)))
+    for LT_Line_element in Table_Dictionary.values():
+        print(str(len(LT_Line_element)))
+
+    f = open(os.path.join(os.path.join(args.output, LINES), imageName.replace(".png", "")) + "-LTLines.txt", "w")
+    f.write(str(len(Table_Dictionary)) + "\n")
+    # for dicelement in Table_Dictionary.values():
+    #     for element in dicelement:
+    #         f.write(element.To_String() + "\n")  
+    for element in line_List_Horizontal:
+        f.write(element.To_String() + "\n")    
+    for element in line_List_Vertical:
+        f.write(element.To_String() + "\n")    
+    f.close()
+
+def On_Segment(Line_element, dictionary):
+    offset = 1 #I made this up, but it works
+    for key, value in dictionary.items():
+        if(len(value) > 0):
+            for element in value:  
+                if (round(Line_element.x0) - offset <= max(round(element.x0), round(element.x1)) and round(Line_element.x0) + offset >= min(round(element.x0), round(element.x1)) and 
+                    round(Line_element.y0) - offset <= max(round(element.y0), round(element.y1)) and round(Line_element.y0) + offset >= min(round(element.y0), round(element.y1))):
+                    return True, key
+                elif(round(Line_element.x1) - offset <= max(round(element.x0), round(element.x1)) and round(Line_element.x1) + offset >= min(round(element.x0), round(element.x1)) and 
+                     round(Line_element.y1) - offset <= max(round(element.y0), round(element.y1)) and round(Line_element.y1) + offset >= min(round(element.y0), round(element.y1))):
+                    return True, key
+    return False, ""
+
+"""
+# def Check_Connection(Line_element, dictionary):
+#     connected = False
+#     for key, value in dictionary.items():
+#         if(len(value) > 0):
+#             for element in value:
+#                 if((element.x0 <= Line_element.x0 and element.x1 >= Line_element.x1) and (element.y0 and )):
+
+#     return connected, key
+
+# def LookThroughLTRectLineList_Obsolete(imageName, args):
+#     Line_Dictionary = {}
+#     for LT_Line_element in LTRectLineList:
+#         if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
+#             if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
+#                 key = str(round(LT_Line_element.x0)) + str(round(LT_Line_element.x1))
+#                 if key in Line_Dictionary:
+#                     Line_Dictionary[key].append(LT_Line_element) 
+#                 else:
+#                     Line_Dictionary[key] = [LT_Line_element]
+    
+#     for dicelement in Line_Dictionary.values():
+#         for element in dicelement:
+#             TableLines.append(element)
+
+#     f = open(os.path.join(os.path.join(args.output, LINES), imageName.replace(".png", "")) + "-LTLines.txt", "w")
+#     f.write(str(len(Line_Dictionary)) + "\n")
+#     for dicelement in Line_Dictionary.values():
+#         for element in dicelement:
+#             f.write(element.To_String() + "\n")   
+#     f.close()
+
+
+def CheckDictionaryHorizontally(element, dictionary):
+    exists_In_Dictionary = False
+    for dic_List_element in dictionary.values():
+        for dic_element in dic_List_element:
+            if(round(element.y0, 2) == round(dic_element.y0, 2)):
+                exists_In_Dictionary = True
+    return exists_In_Dictionary
 
 def LookThroughLTLineList(imageName, args):
     #Divide into dictionary where key is the elements height.
@@ -293,7 +419,6 @@ def LookThroughLTLineList(imageName, args):
 
     # Prints dictionary info:
     # print("Dic lengh:" + str(len(Line_Dictionary)))
-    # print(str(len(Line_Dictionary)))
     # for LT_Line_element in Line_Dictionary.values():
     #     print(str(len(LT_Line_element)))
 
@@ -330,6 +455,8 @@ def Count_Elements_In_Dictionary(dictionary):
     for LT_Line_element in dictionary.values():
         dictionary_Values_Lengh = dictionary_Values_Lengh + len(LT_Line_element)
     return dictionary_Values_Lengh
+
+"""
 
 if __name__ == '__main__':
     # Arguments
