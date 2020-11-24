@@ -32,6 +32,13 @@ class PDF_file:
 
 class PDF_page:
     def __init__(self, owner, args, page):
+        self.LTImageList = []
+        self.LTRectList = []
+        self.LTRectLineList = []
+        self.LTCurveList = []
+        self.LTLineList = []
+        self.LTTextLineList = []
+        self.TableLines = []
         owner.interpreter.process_page(page)
         self.layout = owner.device.get_result()
 
@@ -47,25 +54,17 @@ class PDF_page:
         self.actualHeightModifier = self.height/self.PDFfile_height
         self.actualWidthModifier = self.width/self.PDFfile_width
 
-class PDFMinerObject:
-    def __init__(self, x0, y0, x1, y1):
+class Coordinates(): 
+    def __init__(self, x0, y0, x1, y1): 
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
         self.y1 = y1
 
-class LT_Line_Class(PDFMinerObject):
+class LT_Line_Class(Coordinates):
     def To_String(self):
         return "Coord: (({0}, {1}), ({2}, {3}))".format(round(self.x0), round(self.y0), round(self.x1), round(self.y1))
 
-
-LTImageList = []
-LTRectList = []
-LTRectLineList = []
-LTCurveList = []
-LTLineList = []
-LTTextLineList = []
-TableLines = []
 
 def main(args):
     IO_handler.folder_prep(args.output, args.clean)
@@ -83,7 +82,15 @@ def main(args):
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
-def doshit(file, args): #TODO: Renames
+def doshit_single(file, args):
+    pageNum = 0
+    current_PDF = PDF_file(file, args)
+    for page in current_PDF.pages:
+        SearchPage(page, args)
+        #LookThroughLines(page.image_name, args)
+        return page.
+
+def doshit(file, args): 
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
@@ -101,14 +108,6 @@ def init_file(args, fileName):
     return PDFPage.get_pages(fp), PDFPageInterpreter(rsrcmgr, device), device
 
 def SearchPage(page, args):
-
-    LTImageList.clear()
-    LTRectList.clear()
-    LTCurveList.clear()
-    LTLineList.clear()
-    LTTextLineList.clear()
-    LTRectLineList.clear()
-
     index = 1
     figureIndex = 1
     #find all images and figures first.
@@ -118,8 +117,8 @@ def SearchPage(page, args):
             figureIndex = figureIndex + 1
 
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-            newLTImage = PDFMinerObject(x0, y0, x1, y1)
-            LTImageList.append(newLTImage)
+            newLTImage = Coordinates(x0, y0, x1, y1)
+            page.LTImageList.append(newLTImage)
             SaveFigure(lobj, page, figureIndex, args)
 
 
@@ -130,13 +129,13 @@ def SearchPage(page, args):
             if(result[0] == True): #it is a line
                 if(result[1] == 1): #horizontal line
                     newLTLine = LT_Line_Class(x0, y0, x1, y0) 
-                    LTRectLineList.append(newLTLine)
+                    page.LTRectLineList.append(newLTLine)
                 elif(result[1] == 2): #vertical line
                     newLTLine = LT_Line_Class(x0, y0, x0, y1) 
-                    LTRectLineList.append(newLTLine)
+                    page.LTRectLineList.append(newLTLine)
             else:
-                newLTRect = PDFMinerObject(x0, y0, x1, y1)
-                LTRectList.append(newLTRect)
+                newLTRect = Coordinates(x0, y0, x1, y1)
+                page.LTRectList.append(newLTRect)
 
 
         if isinstance(lobj, LTFigure):
@@ -146,8 +145,8 @@ def SearchPage(page, args):
                     figureIndex = figureIndex + 1
 
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
-                    newLTImage = PDFMinerObject(x0, y0, x1, y1)
-                    LTImageList.append(newLTImage)
+                    newLTImage = Coordinates(x0, y0, x1, y1)
+                    page.LTImageList.append(newLTImage)
                     SaveFigure(inner_obj, page, figureIndex, args)
 
 
@@ -155,15 +154,15 @@ def SearchPage(page, args):
                 elif isinstance(inner_obj, LTCurve):
                     index = index + 1
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
-                    newLTCurve = PDFMinerObject(x0, y0, x1, y1)
-                    LTCurveList.append(newLTCurve)
+                    newLTCurve = Coordinates(x0, y0, x1, y1)
+                    page.LTCurveList.append(newLTCurve)
 
 
         if isinstance(lobj, LTLine):
             index = index + 1
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
             newLTLine = LT_Line_Class(x0, y0, x1, y1)
-            LTLineList.append(newLTLine)
+            page.LTLineList.append(newLTLine)
 
 
         #find all text.
@@ -172,10 +171,11 @@ def SearchPage(page, args):
                 if isinstance(obj, LTTextLine):
                     index = index + 1
                     x0, y0, x1, y1 = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]
-                    newLTTextBox = PDFMinerObject(x0, y0, x1, y1)
-                    LTTextLineList.append(newLTTextBox)
+                    newLTTextBox = Coordinates(x0, y0, x1, y1)
+                    page.LTTextLineList.append(newLTTextBox)
 
     print("There were " + str(index) + " objects on this page")
+    
 
 def Check_If_Line(x0, y0, x1, y1):
     is_It_Line = False
@@ -211,21 +211,21 @@ def PaintPNGs(page, args):
 
     #LTRect:
     colorPink = (127,255,0)
-    image = Paint(image, page, LTRectList, colorPink, thickness)    
+    image = Paint(image, page, page.LTRectList, colorPink, thickness)    
 
     #LTImage:
     colorGreen = (0, 255, 0) #green - image
-    image = Paint(image, page, LTImageList, colorGreen, thickness)    
+    image = Paint(image, page, page.LTImageList, colorGreen, thickness)    
 
     #LTCurve:
     colorBlue = (255, 0, 0) #blue - figure
-    image = Paint(image, page, LTCurveList, colorBlue, lineThickness)    
+    image = Paint(image, page, page.LTCurveList, colorBlue, lineThickness)    
 
     #LTLines:
-    image = Paint(image, page, LTLineList, colorBlue, lineThickness)  
+    image = Paint(image, page, page.LTLineList, colorBlue, lineThickness)  
     #LTRectlines:
     color_Light_Blue = (255,191,0)
-    image = Paint(image, page, LTRectLineList, color_Light_Blue, lineThickness)  
+    image = Paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness)  
 
     #table lines:
     colorRed = (0,0,255)
@@ -234,7 +234,7 @@ def PaintPNGs(page, args):
     #LTTextlines:
     colorBlack = (0, 0, 0) #black - text
     #colorWhite = (255, 255, 255) #white
-    image = Paint(image, page, LTTextLineList, colorBlack, thickness)    
+    image = Paint(image, page, page.LTTextLineList, colorBlack, thickness)    
     print(page.image_name)
 
     cv2.imwrite(os.path.join(os.path.join(args.output, ANNOTATED), page.image_name), image) #save picture
