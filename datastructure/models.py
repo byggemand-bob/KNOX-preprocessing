@@ -1,40 +1,59 @@
-"""This module provides datastructures for pages and page-elements"""
+"""
+This module provides datastructures for pages and page-elements
+"""
 
-class TextSegment():
+class Coordinates:
+    """
+    Describes an area defined by two sets of coordinates.
+    """
+    def __init__(self, x1: int, y1 : int, x2: int, y2: int): 
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+
+    def to_string(self) -> str:
+        """
+        Return the coordinates in string format.
+        """
+        return "({0}, {1})({2}, {3})".format(self.x1, self.y1, self.x2, self.y2)
+
+    def area(self) -> int:
+        """
+        Calculates and returns the size of the area spanning the coordinates.
+        """
+        return abs(self.x1 - self.x2) * abs(self.y1 - self.y2)
+
+class TextSegment:
     def __init__(self, coordinates, header, value):
         self.coordinates = coordinates
         self.header = header
         self.value = value
 
 
-class ImageSegment():
+class ImageSegment:
     byte_value = None
     coordinates = None
-    page_number = None
-    def __init__(self, coordinates, page_number):
-        self.coordinates = coordinates
-        self.page_number = page_number
-
-
-class TableSegment():
-    byte_value = None
-    coordinates = None
-    page_number = None
+    page_number: int
     def __init__(self, coordinates):
-        self.coordinates = coordinates  
+        self.coordinates = coordinates
 
 
-class Coordinates(): 
-    def __init__(self, x1, y1, x2, y2): 
-        self.x1 = x1
-        self.x2 = x2
-        self.y1 = y1
-        self.y2 = y2
+class TableSegment:
+    byte_value = None
+    coordinates: Coordinates = None
+    page_number: int
+    def __init__(self, coordinates: Coordinates):
+        self.coordinates = coordinates
 
+class Page:
+    textSections = None
+    images = None
+    tables = None
+    page_number: int
+    def __init__(self, page_number: int):
+        self.page_number = page_number
+        self.textSections = []
+        self.images = []
+        self.tables = []
 
-class Page():
-    textSections = []
-    images = []
-    tables = []
-    def __init__(self):
-        pass
