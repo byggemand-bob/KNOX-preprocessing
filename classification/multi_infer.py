@@ -1,9 +1,14 @@
-import infer
-import concurrent.futures as cf
+"""
+This module allow MI-inference on multiple files.
+"""
 import os
 import argparse
+import infer
 
-def multi_infer(in_dir, out_dir):
+def multi_infer(in_dir: str, out_dir: str):
+    """
+    Runs inference on all images in a specified directory
+    """
     for file in os.listdir(in_dir,):
         if file.endswith(".png"):
             infer.infer_image_with_mask(os.path.join(in_dir,file), out_dir)

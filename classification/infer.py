@@ -1,25 +1,26 @@
+""" TODO: Add docstring """
+
 import os
-import sys
+import argparse
 import random
 import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.transforms import transforms
-import argparse
 import cv2
 import numpy as np
 
 
-seed = 1234
-random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+SEED = 1234
+random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed_all(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 
-checkpoint_path = "model_196000.pth"
+CHECKPOINT_PATH = "model_196000.pth"
 
 CATEGORIES2LABELS = {
     0: "bg",
@@ -45,8 +46,7 @@ def get_instance_segmentation_model(num_classes):
     )
     return model
 
-
-def infer_image(image_path):
+def infer_image_from_matrix(image):
     num_classes = 6
 
     # Get model and send to GPU
@@ -54,8 +54,36 @@ def infer_image(image_path):
     model.cuda()
 
     # Assure model exists and prepare it
-    assert os.path.exists(checkpoint_path)
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    assert os.path.exists(CHECKPOINT_PATH)
+    checkpoint = torch.load(CHECKPOINT_PATH, map_location='cpu')
+    model.load_state_dict(checkpoint['model'])
+    model.eval()
+
+    rat = 1300 / image.shape[0]
+    image = cv2.resize(image, None, fx=rat, fy=rat)
+
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor()
+    ])
+    image = transform(image)
+
+    # Classify document elements
+    with torch.no_grad():
+        prediction = model([image.cuda()])
+
+    return prediction
+
+def infer_image_from_file(image_path):
+    num_classes = 6
+
+    # Get model and send to GPU
+    model = get_instance_segmentation_model(num_classes)
+    model.cuda()
+
+    # Assure model exists and prepare it
+    assert os.path.exists(CHECKPOINT_PATH)
+    checkpoint = torch.load(CHECKPOINT_PATH, map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model.eval()
 
@@ -88,8 +116,8 @@ def infer_image_with_mask(image_path, output_folder):
     model.cuda()
 
     # Assure model exists and prepare it
-    assert os.path.exists(checkpoint_path)
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    assert os.path.exists(CHECKPOINT_PATH)
+    checkpoint = torch.load(CHECKPOINT_PATH, map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model.eval()
 
@@ -209,6 +237,17 @@ def overlay_ann(image, mask, box, label, score, alpha=0.5):
  
     return image
 
+
+def convert2MIformat(image):
+    rat = 1300 / image.shape[0]
+    image = cv2.resize(image, None, fx=rat, fy=rat)
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor()
+    ])
+    image = transform(image)       
+    image = torch.squeeze(image, 0).permute(1, 2, 0).mul(255).numpy().astype(np.uint8)    
+    return image
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
