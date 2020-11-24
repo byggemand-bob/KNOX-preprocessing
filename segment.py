@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # print(len(page2.tables))
     # for table in page2.tables:
     #     print(table.coordinates.to_string())
-        
+
     # page3 = merge_pages(page1, page2)
 
     # print(len(page3.tables))

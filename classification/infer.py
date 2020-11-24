@@ -1,4 +1,6 @@
-""" TODO: Add docstring """
+"""
+This module adds the MI functionality for the segmentation.
+"""
 
 import os
 import argparse
@@ -32,7 +34,10 @@ CATEGORIES2LABELS = {
 }
 
 
-def get_instance_segmentation_model(num_classes):
+def __get_instance_segmentation_model__(num_classes):
+    """
+    Initializes the MI-model.
+    """
     model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -47,10 +52,14 @@ def get_instance_segmentation_model(num_classes):
     return model
 
 def infer_image_from_matrix(image):
+    """
+    Runs inference on an image. The image is passed as a matrix.
+    Returns a list of predictions for the image.
+    """
     num_classes = 6
 
     # Get model and send to GPU
-    model = get_instance_segmentation_model(num_classes)
+    model = __get_instance_segmentation_model__(num_classes)
     model.cuda()
 
     # Assure model exists and prepare it
@@ -75,10 +84,14 @@ def infer_image_from_matrix(image):
     return prediction
 
 def infer_image_from_file(image_path):
+    """
+    Runs inference on an image. The image is passed as a path to an image file.
+    Returns a list of predictions for the image.
+    """
     num_classes = 6
 
     # Get model and send to GPU
-    model = get_instance_segmentation_model(num_classes)
+    model = __get_instance_segmentation_model__(num_classes)
     model.cuda()
 
     # Assure model exists and prepare it
@@ -108,11 +121,15 @@ def infer_image_from_file(image_path):
     return prediction
 
 # TODO: Refactor
-def infer_image_with_mask(image_path, output_folder):
+def infer_image_with_mask(image_path, output_path):
+    """
+    Runs inference on an image. The image is passed as a path to an image file.
+    Writes a new image with masks depicting the predictions.
+    """
     num_classes = 6
 
     # Get model and send to GPU
-    model = get_instance_segmentation_model(num_classes)
+    model = __get_instance_segmentation_model__(num_classes)
     model.cuda()
 
     # Assure model exists and prepare it
@@ -154,53 +171,58 @@ def infer_image_with_mask(image_path, output_folder):
 
             image = overlay_ann(image, m, box, label, score)
 
-    cv2.imwrite(output_folder + "{}".format(os.path.basename(image_path)), image)
+    cv2.imwrite(output_path, image)
+
+def multi_infer(in_dir: str, out_dir: str):
+    """
+    Runs inference on all images in a specified directory
+    """
+    for file in os.listdir(in_dir,):
+        if file.endswith(".png"):
+            infer_image_with_mask(os.path.join(in_dir,file), out_dir)
 
 ### Colouring utilities ###
 # TODO: Make colours consistent
 
-def show(img, name="disp", width=1000):
-    """
-    name: name of window, should be name of img
-    img: source of img, should in type ndarray
-    """
-    cv2.namedWindow(name, cv2.WINDOW_GUI_EXPANDED)
-    cv2.resizeWindow(name, width, 1000)
-    cv2.imshow(name, img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
+# Might be obsolete
 def overlay_mask(image, mask, alpha=0.5):
+    """
+    Creates the overlay mask.
+    """
     c = (np.random.random((1, 3)) * 153 + 102).tolist()[0]
- 
+
     mask = np.dstack([mask.astype(np.uint8)] * 3)
     mask = cv2.threshold(mask, 127.5, 255, cv2.THRESH_BINARY)[1]
     inv_mask = 255 - mask
 
     overlay = image.copy()
-    overlay = np.minimum(overlay, inv_mask) 
+    overlay = np.minimum(overlay, inv_mask)
 
     color_mask = (mask.astype(np.bool) * c).astype(np.uint8)
-    overlay = np.maximum(overlay, color_mask).astype(np.uint8) 
+    overlay = np.maximum(overlay, color_mask).astype(np.uint8)
 
     image = cv2.addWeighted(image, alpha, overlay, 1 - alpha, 0)
     return image
 
 def overlay_ann(image, mask, box, label, score, alpha=0.5):
+    """
+    Creates the overlay mask and adds it to the image.
+    """
     c = np.random.random((1, 3))
     mask_color = (c * 153 + 102).tolist()[0]
     text_color = (c * 183 + 72).tolist()[0]
- 
+
     mask = np.dstack([mask.astype(np.uint8)] * 3)
     mask = cv2.threshold(mask, 127.5, 255, cv2.THRESH_BINARY)[1]
     inv_mask = 255 - mask
 
     overlay = image.copy()
-    overlay = np.minimum(overlay, inv_mask) 
+    overlay = np.minimum(overlay, inv_mask)
 
     color_mask = (mask.astype(np.bool) * mask_color).astype(np.uint8)
-        
-    overlay = np.maximum(overlay, color_mask).astype(np.uint8) 
+
+    overlay = np.maximum(overlay, color_mask).astype(np.uint8)
 
     image = cv2.addWeighted(image, alpha, overlay, 1 - alpha, 0)
 
@@ -234,26 +256,34 @@ def overlay_ann(image, mask, box, label, score, alpha=0.5):
         cv2.FONT_HERSHEY_SIMPLEX,
         0.3, (0, 0, 0), 1
     )
- 
+
     return image
 
 
-def convert2MIformat(image):
+def convert_to_mi_format(image):
+    """
+    Convert image to a format usable by the MI-model.
+    """
     rat = 1300 / image.shape[0]
     image = cv2.resize(image, None, fx=rat, fy=rat)
     transform = transforms.Compose([
         transforms.ToPILImage(),
         transforms.ToTensor()
     ])
-    image = transform(image)       
-    image = torch.squeeze(image, 0).permute(1, 2, 0).mul(255).numpy().astype(np.uint8)    
+    image = transform(image)
+    image = torch.squeeze(image, 0).permute(1, 2, 0).mul(255).numpy().astype(np.uint8)
     return image
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=str)
-    parser.add_argument("output", type=str)
-    args = parser.parse_args()
+    parser.add_argument("input", type=str, help="Input path. Either a file or directory.")
+    parser.add_argument("output", type=str, help="Output path. Either a file or a directory.")
+    argv = parser.parse_args()
 
-    infer_image_with_mask(args.input, args.output)
+    if os.path.isfile(argv.input) and os.path.isfile(argv.output):
+        infer_image_with_mask(argv.input, argv.output)
+    elif os.path.isdir(argv.input) and os.path.isdir(argv.output):
+        multi_infer(argv.input, argv.output)
+    else:
+        print("Both input and output must both be either file- or directorie-paths.")
     exit()

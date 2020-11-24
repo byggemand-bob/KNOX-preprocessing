@@ -6,7 +6,7 @@ class Coordinates:
     """
     Describes an area defined by two sets of coordinates.
     """
-    def __init__(self, x1: int, y1 : int, x2: int, y2: int): 
+    def __init__(self, x1: int, y1 : int, x2: int, y2: int):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
@@ -25,6 +25,9 @@ class Coordinates:
         return abs(self.x1 - self.x2) * abs(self.y1 - self.y2)
 
 class TextSegment:
+    """
+    Describes a textsegment found on a page.
+    """
     def __init__(self, coordinates, header, value):
         self.coordinates = coordinates
         self.header = header
@@ -32,6 +35,9 @@ class TextSegment:
 
 
 class ImageSegment:
+    """
+    Describes an imagesegment found on a page.
+    """
     byte_value = None
     coordinates = None
     page_number: int
@@ -40,6 +46,9 @@ class ImageSegment:
 
 
 class TableSegment:
+    """
+    Describes a tablesegment found on a page.
+    """
     byte_value = None
     coordinates: Coordinates = None
     page_number: int
@@ -59,10 +68,10 @@ class Page:
         self.text_sections = []
         self.images = []
         self.tables = []
-    
-    def add_from_page(self, page: Page):
+
+    def add_from_page(self, page):
         """
-        Adds the content of a page to this page
+        Adds the content of a page to this page.
         """
         self.text_sections.extend(page.text_sections)
         self.images.extend(page.images)
