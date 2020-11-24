@@ -34,9 +34,7 @@ class PDF_page:
     def __init__(self, owner, args, page):
         self.LTImageList = []
         self.LTRectList = []
-        #self.LTRectLineList = []
-        self.LTRectLineListHorizontal = []
-        self.LTRectLineListVertical = []
+        self.LTRectLineList = []
         self.LTCurveList = []
         self.LTLineList = []
         self.LTTextLineList = []
@@ -132,10 +130,10 @@ def SearchPage(page, args):
             if(result[0] == True): #it is a line
                 if(result[1] == 1): #horizontal line
                     newLTLine = LT_Line_Class(x0, y0, x1, y0) 
-                    page.LTRectLineListHorizontal.append(newLTLine)
+                    page.LTRectLineList.append(newLTLine)
                 elif(result[1] == 2): #vertical line
                     newLTLine = LT_Line_Class(x0, y0, x0, y1) 
-                    page.LTRectLineListVertical.append(newLTLine)
+                    page.LTRectLineList.append(newLTLine)
             else:
                 newLTRect = Coordinates(x0, y0, x1, y1)
                 page.LTRectList.append(newLTRect)
@@ -210,8 +208,7 @@ def SaveFigure(lobj, page, figureIndex, args):
 def Flip_Y_Coordinates(page):
     Flip_Y_Coordinate(page, page.LTImageList)
     Flip_Y_Coordinate(page, page.LTRectList)
-    Flip_Y_Coordinate(page, page.LTRectLineListHorizontal)
-    Flip_Y_Coordinate(page, page.LTRectLineListVertical)
+    Flip_Y_Coordinate(page, page.LTRectLineList)
     Flip_Y_Coordinate(page, page.LTCurveList)
     Flip_Y_Coordinate(page, page.LTLineList)
     Flip_Y_Coordinate(page, page.LTTextLineList)
@@ -243,8 +240,7 @@ def PaintPNGs(page, args):
     image = Paint(image, page, page.LTLineList, colorBlue, lineThickness)  
     #LTRectlines:
     color_Light_Blue = (255,191,0)
-    image = Paint(image, page, page.LTRectLineListHorizontal, color_Light_Blue, lineThickness) 
-    image = Paint(image, page, page.LTRectLineListVertical, color_Light_Blue, lineThickness)   
+    image = Paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness) 
 
     #table lines:
     colorRed = (0,0,255)
@@ -274,34 +270,25 @@ def LookThroughLines(page, args):
 def LookThroughLTRectLineList(page, args):
     Table_Dictionary = {}
     table_Index_key = 0
-    line_List_Horizontal = page.LTRectLineListHorizontal.copy()
-    line_List_Vertical = page.LTRectLineListVertical.copy()
+    line_list = page.LTRectLineList.copy()
 
     something_was_changed = False
 
     while(True):
         if(something_was_changed == True):
             something_was_changed = False
-            for LT_Line_element in line_List_Horizontal:
+            for LT_Line_element in line_list:
                 result = On_Segment(LT_Line_element, Table_Dictionary)
                 if(result[0] == True):
                     key = result[1]
                     if key in Table_Dictionary:
                         Table_Dictionary[key].append(LT_Line_element) 
-                        line_List_Horizontal.remove(LT_Line_element)
-                        something_was_changed = True
-            for LT_Line_element in line_List_Vertical:
-                result = On_Segment(LT_Line_element, Table_Dictionary)
-                if(result[0] == True):
-                    key = result[1]
-                    if key in Table_Dictionary:
-                        Table_Dictionary[key].append(LT_Line_element) 
-                        line_List_Vertical.remove(LT_Line_element)
+                        line_list.remove(LT_Line_element)
                         something_was_changed = True
         else:
-            if(len(line_List_Horizontal) > 0):
-                Table_Dictionary[table_Index_key] = [line_List_Horizontal[0]]
-                line_List_Horizontal.remove(line_List_Horizontal[0])
+            if(len(line_list) > 0):
+                Table_Dictionary[table_Index_key] = [line_list[0]]
+                line_list.remove(line_list[0])
                 table_Index_key = table_Index_key + 1
                 something_was_changed = True
             else:
@@ -320,10 +307,8 @@ def LookThroughLTRectLineList(page, args):
     f.write(str(len(Table_Dictionary)) + "\n")
     # for dicelement in Table_Dictionary.values():
     #     for element in dicelement:
-    #         f.write(element.To_String() + "\n")  
-    for element in line_List_Horizontal:
-        f.write(element.To_String() + "\n")    
-    for element in line_List_Vertical:
+    #         f.write(element.To_String() + "\n")   
+    for element in line_list:
         f.write(element.To_String() + "\n")    
     f.close()
 
