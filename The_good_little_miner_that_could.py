@@ -6,7 +6,9 @@ import argparse
 import numpy as ny
 import time
 import shutil
+import segment
 import IO_handler
+import datastructure.models as datastructures
 import utils.pdf2png as pdf2png
 import concurrent.futures as cf
 from pdfminer.converter import PDFPageAggregator
@@ -47,7 +49,7 @@ class PDF_page:
 
         #Prerequisites for image processing
         self.image_name = owner.file_name.replace(".pdf", "_page") + str(len(owner.pages) + 1) + ".png"
-
+        self.image_number = len(owner.pages)+1
         self.first_image = cv2.imread(os.path.join(os.path.join(args.output, IMAGES), self.image_name))
         self.height, self.width = self.first_image.shape[:2]
 
@@ -70,7 +72,10 @@ def main(args):
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
 
-    files = []
+    for file in os.listdir(args.input):
+        if file.endswith('.pdf'):
+            doshit_single(file, args)
+    """files = []
     list_args = []
     for file in os.listdir(args.input):
         if file.endswith(".pdf"):
@@ -78,7 +83,7 @@ def main(args):
             list_args.append(args)
 
     with cf.ProcessPoolExecutor() as executor:
-        executor.map(doshit, files, list_args)
+        executor.map(doshit, files, list_args) """
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
@@ -88,7 +93,10 @@ def doshit_single(file, args):
     for page in current_PDF.pages:
         SearchPage(page, args)
         LookThroughLines(page, args)
-        #return page.
+        page1 = make_page(page)
+        page2 = segment.infer_page(page.image_name)
+        segment.merge_pages(page1, page2)
+        
 
 def doshit(file, args): 
     pageNum = 0
@@ -177,6 +185,20 @@ def SearchPage(page, args):
 
     print("There were " + str(index) + " objects on this page")
     
+def make_page(page: PDF_page):
+    result = datastructures.Page(page.image_number)
+    result.add_from_page_manuel([], convert_to_pixel_height(page, page.LTImageList), convert_to_pixel_height(page, page.LTRectList))
+
+def convert_to_pixel_height(page: PDF_page, object_list: list):
+    result_elements = []
+    for element in object_list:
+        result_elements.append(Coordinates(page.actualHeightModifier * element.x0,
+                                           page.actualWidthModifier * element.y0,
+                                           page.actualHeightModifier * element.x1,
+                                           page.actualWidthModifier * element.y1))
+    
+    return result_elements
+
 
 def Check_If_Line(x0, y0, x1, y1):
     is_It_Line = False

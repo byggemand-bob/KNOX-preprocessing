@@ -59,10 +59,6 @@ class Page:
     """
     Contains the content of a page.
     """
-    text_sections = None
-    images = None
-    tables = None
-    page_number: int
     def __init__(self, page_number: int):
         self.page_number = page_number
         self.text_sections = []
@@ -76,3 +72,13 @@ class Page:
         self.text_sections.extend(page.text_sections)
         self.images.extend(page.images)
         self.tables.extend(page.tables)
+
+        self.tables.extend(page.tables)
+    
+    def add_from_page_manuel(self, text_sections, images, tables):
+        """
+        Adds the content of a page to this page.
+        """
+        self.text_sections.extend(text_sections)
+        self.images.extend(images)
+        self.tables.extend(tables)
