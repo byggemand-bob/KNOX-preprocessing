@@ -39,6 +39,7 @@ class PDF_page:
         self.LTLineList = []
         self.LTTextLineList = []
         self.TableLines = []
+        self.TableCoordinates = []
         owner.interpreter.process_page(page)
         self.layout = owner.device.get_result()
 
@@ -87,15 +88,16 @@ def doshit_single(file, args):
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
-        #LookThroughLines(page.image_name, args)
-        return page.
+        LookThroughLineLists(page, args)
+        #return page.
 
 def doshit(file, args): 
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
-        LookThroughLines(page.image_name, args)
+        Flip_Y_Coordinates(page)
+        LookThroughLineLists(page, args)
         PaintPNGs(page, args)
         print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
         pageNum = pageNum + 1
@@ -204,7 +206,21 @@ def SaveFigure(lobj, page, figureIndex, args):
         file_obj.write(lobj.stream.get_rawdata())
         file_obj.close()
 
+def Flip_Y_Coordinates(page):
+    Flip_Y_Coordinate(page, page.LTImageList)
+    Flip_Y_Coordinate(page, page.LTRectList)
+    Flip_Y_Coordinate(page, page.LTRectLineList)
+    Flip_Y_Coordinate(page, page.LTCurveList)
+    Flip_Y_Coordinate(page, page.LTLineList)
+    Flip_Y_Coordinate(page, page.LTTextLineList)
+
+def Flip_Y_Coordinate(page, object_List):
+    for element in object_List:
+        element.y0 = page.PDFfile_height - element.y0
+        element.y1 = page.PDFfile_height - element.y1
+
 def PaintPNGs(page, args):
+
     thickness = -1
     lineThickness = 40
     image = cv2.rectangle(page.first_image, (0,0), (0,0), (255, 255, 255), 1)
@@ -225,11 +241,11 @@ def PaintPNGs(page, args):
     image = Paint(image, page, page.LTLineList, colorBlue, lineThickness)  
     #LTRectlines:
     color_Light_Blue = (255,191,0)
-    image = Paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness)  
+    image = Paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness) 
 
-    #table lines:
+    #tables:
     colorRed = (0,0,255)
-    image = Paint(image, page, TableLines, colorRed, 10)      
+    image = Paint(image, page, page.TableCoordinates, colorRed, thickness)      
 
     #LTTextlines:
     colorBlack = (0, 0, 0) #black - text
@@ -240,96 +256,178 @@ def PaintPNGs(page, args):
     cv2.imwrite(os.path.join(os.path.join(args.output, ANNOTATED), page.image_name), image) #save picture
 
 def Paint(image, page, objectList, color, thickness):
-    for text_line_element in objectList:
-        start_point = (round(text_line_element.x0*page.actualWidthModifier), round((page.PDFfile_height-text_line_element.y0)*page.actualHeightModifier))
-        end_point = (round(text_line_element.x1* page.actualWidthModifier), round((page.PDFfile_height-text_line_element.y1)*page.actualHeightModifier))
+    for element in objectList:
+        start_point = (round(element.x0*page.actualWidthModifier), round(element.y0*page.actualHeightModifier))
+        end_point = (round(element.x1* page.actualWidthModifier), round(element.y1*page.actualHeightModifier))
 
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
     
     return image
 
-def LookThroughLines(imageName, args):
-    TableLines.clear()
-    LookThroughLTRectLineList(imageName, args)
-    LookThroughLTLineList(imageName, args)
+def LookThroughLineLists(page, args):
+    # if(len(page.LTLineList) > 0):
+    #     LookThroughLTLineList(page, args)
+    # if(len(page.TableLines) > 0):
+    #     for element in page.TableLines:
+    #         page.LTRectLineList.append(element)
+    LookThroughLTRectLineList(page, args)
 
-def LookThroughLTRectLineList(imageName, args):
-    print("Hey! :D")
-
-def LookThroughLTLineList(imageName, args):
-    #Divide into dictionary where key is the elements height.
-    Line_Dictionary = {}
-    for LT_Line_element in LTLineList:
-        if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
-            if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
-                newHeightCoordinate = True
-                for dicelement in Line_Dictionary.values():
-                    for Line_Dic_element in dicelement:
-                        #if((round(LT_Line_element.x0) == round(Line_Dic_element.x1) or round(LT_Line_element.x1) == round(Line_Dic_element.x0)) and round(LT_Line_element.y0) == round(Line_Dic_element.y0)):
-                        if(round(LT_Line_element.y0, 2) == round(Line_Dic_element.y0, 2)):# and LT_Line_element.y1 == Line_Dic_element.y1):
-                            newHeightCoordinate = False
-                            key = str(round(LT_Line_element.y0, 2))
-                            if key in Line_Dictionary:
-                                Line_Dictionary[key].append(LT_Line_element) 
-                            else:
-                                Line_Dictionary[key] = [LT_Line_element]
-                            break
-                    if(newHeightCoordinate == False):
-                        break
-                if(newHeightCoordinate == True):
-                    key = str(round(LT_Line_element.y0, 2))
-                    Line_Dictionary[key] = [LT_Line_element]
+# def LookThroughLTLineList(page, args):
+#     #Divide into dictionary where key is the elements height.
+#     Line_Dictionary = {}
+#     for LT_Line_element in page.LTLineList:
+#         if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
+#             if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
+#                 newHeightCoordinate = True
+#                 for dicelement in Line_Dictionary.values():
+#                     for Line_Dic_element in dicelement:
+#                         if(round(LT_Line_element.y0, 2) == round(Line_Dic_element.y0, 2)):
+#                             newHeightCoordinate = False
+#                             key = str(round(LT_Line_element.y0, 2))
+#                             if key in Line_Dictionary:
+#                                 Line_Dictionary[key].append(LT_Line_element) 
+#                             else:
+#                                 Line_Dictionary[key] = [LT_Line_element]
+#                             break
+#                     if(newHeightCoordinate == False):
+#                         break
+#                 if(newHeightCoordinate == True):
+#                     key = str(round(LT_Line_element.y0, 2))
+#                     Line_Dictionary[key] = [LT_Line_element]
     
-    #delete those elements in the dictionary which are not connected:
-    dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
-    new_Dictionary_Values_Lengh = 0
-    while(True):
-        Line_Dictionary = Clean_Up_Dictionary(Line_Dictionary)
-        new_Dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
-        if(dictionary_Values_Lengh == new_Dictionary_Values_Lengh or new_Dictionary_Values_Lengh == 0):
-            break
-        else:
-            dictionary_Values_Lengh = new_Dictionary_Values_Lengh
+#     #delete those elements in the dictionaries groupings which are not connected:
+#     dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
+#     new_Dictionary_Values_Lengh = 0
+#     while(True):
+#         Line_Dictionary = Clean_Up_Dictionary(Line_Dictionary)
+#         new_Dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
+#         if(dictionary_Values_Lengh == new_Dictionary_Values_Lengh or new_Dictionary_Values_Lengh == 0):
+#             break
+#         else:
+#             dictionary_Values_Lengh = new_Dictionary_Values_Lengh
 
-    # Prints dictionary info:
-    # print("Dic lengh:" + str(len(Line_Dictionary)))
-    # print(str(len(Line_Dictionary)))
-    # for LT_Line_element in Line_Dictionary.values():
+#     #Prints dictionary info:
+#     # print("Dic lengh:" + str(len(Line_Dictionary)))
+#     # for LT_Line_element in Line_Dictionary.values():
+#     #     print(str(len(LT_Line_element)))
+
+#     # f = open(os.path.join(os.path.join(args.output, LINES), page.image_name.replace(".png", "")) + "-LTLines.txt", "w")
+#     # f.write(str(len(Line_Dictionary)) + "\n")
+#     # for dicelement in Line_Dictionary.values():
+#     #     for element in dicelement:
+#     #         f.write(element.To_String() + "\n")   
+#     # for element in page.LTLineList:
+#     #     f.write(element.To_String() + "\n")   
+#     #f.close()
+
+#     for dicelement in Line_Dictionary.values():
+#         for element in dicelement:
+#             page.TableLines.append(element)
+
+# def Clean_Up_Dictionary(dictionary):
+#     for key, value in dictionary.items():
+#         if(len(value) > 0):
+#             if(len(value) == 1):
+#                 dictionary[key].pop()
+#             else:
+#                 connected = False
+#                 for element in value:
+#                     for element2 in value:
+#                         if(round(element.x0, 2) == round(element2.x1, 2) or round(element.x1, 2) == round(element2.x0, 2)):
+#                             connected = True
+#                 if(connected == False):
+#                     dictionary[key].pop()
+#     return dictionary
+
+# def Count_Elements_In_Dictionary(dictionary):
+    # dictionary_Values_Lengh = 0
+    # for LT_Line_element in dictionary.values():
+    #     dictionary_Values_Lengh = dictionary_Values_Lengh + len(LT_Line_element)
+    # return dictionary_Values_Lengh
+
+def LookThroughLTRectLineList(page, args):
+    Table_Dictionary = {}
+    table_Index_key = 0
+    line_list = page.LTRectLineList.copy()
+
+    something_was_changed = False
+
+    while(True):
+        if(something_was_changed == True):
+            something_was_changed = False
+            for LT_Line_element in line_list:
+                result = On_Segment(LT_Line_element, Table_Dictionary)
+                if(result[0] == True):
+                    key = result[1]
+                    if key in Table_Dictionary:
+                        Table_Dictionary[key].append(LT_Line_element) 
+                        line_list.remove(LT_Line_element)
+                        something_was_changed = True
+        else:
+            if(len(line_list) > 0):
+                Table_Dictionary[table_Index_key] = [line_list[0]]
+                line_list.remove(line_list[0])
+                table_Index_key = table_Index_key + 1
+                something_was_changed = True
+            else:
+                break
+
+    #Prints dictionary info, for testing purposes:
+    # print("Dic lengh:" + str(len(Table_Dictionary)))
+    # for LT_Line_element in Table_Dictionary.values():
     #     print(str(len(LT_Line_element)))
 
-    f = open(os.path.join(os.path.join(args.output, LINES), imageName.replace(".png", "")) + "-LTLines.txt", "w")
-    f.write(str(len(Line_Dictionary)) + "\n")
-    # for dicelement in Line_Dictionary.values():
+    #Write to file, also for testing purposes.
+    # f = open(os.path.join(os.path.join(args.output, LINES), page.image_name.replace(".png", "")) + "-LTLines.txt", "w")
+    # f.write(str(len(Table_Dictionary)) + "\n")
+    # for dicelement in Table_Dictionary.values():
     #     for element in dicelement:
     #         f.write(element.To_String() + "\n")   
-    for element in LTLineList:
-        f.write(element.To_String() + "\n")   
-    f.close()
+    # for element in line_list:
+    #     f.write(element.To_String() + "\n")    
+    #f.close()
 
-    for dicelement in Line_Dictionary.values():
-        for element in dicelement:
-            TableLines.append(element)
+    #find retangle coordinates for each grouping of table lines:
+    for dicelement in Table_Dictionary.values():
+        page.TableCoordinates.append(ReturnRetangleCoordinatesForTable(dicelement))
 
-def Clean_Up_Dictionary(dictionary):
+def On_Segment(Line_element, dictionary):
+    offset = 1 #I made this up, but it works
     for key, value in dictionary.items():
         if(len(value) > 0):
-            if(len(value) == 1):
-                dictionary[key].pop()
-            else:
-                connected = False
-                for element in value:
-                    for element2 in value:
-                        if(round(element.x0, 2) == round(element2.x1, 2) or round(element.x1, 2) == round(element2.x0, 2)):
-                            connected = True
-                if(connected == False):
-                    dictionary[key].pop()
-    return dictionary
+            for element in value:  
+                if (round(Line_element.x0) - offset <= max(round(element.x0), round(element.x1)) and round(Line_element.x0) + offset >= min(round(element.x0), round(element.x1)) and 
+                    round(Line_element.y0) - offset <= max(round(element.y0), round(element.y1)) and round(Line_element.y0) + offset >= min(round(element.y0), round(element.y1))):
+                    return True, key
+                elif(round(Line_element.x1) - offset <= max(round(element.x0), round(element.x1)) and round(Line_element.x1) + offset >= min(round(element.x0), round(element.x1)) and 
+                     round(Line_element.y1) - offset <= max(round(element.y0), round(element.y1)) and round(Line_element.y1) + offset >= min(round(element.y0), round(element.y1))):
+                    return True, key
+    return False, ""
 
-def Count_Elements_In_Dictionary(dictionary):
-    dictionary_Values_Lengh = 0
-    for LT_Line_element in dictionary.values():
-        dictionary_Values_Lengh = dictionary_Values_Lengh + len(LT_Line_element)
-    return dictionary_Values_Lengh
+def ReturnRetangleCoordinatesForTable(dicelement):
+    lower_left_x0 = 0
+    lower_left_y0 = 0
+    upper_right_x1 = 0
+    upper_right_y1 = 0
+
+    index = 0
+    for element in dicelement:
+        if(index > 0):
+            if(round(element.x0) <= round(lower_left_x0) and round(element.y0) >= round(lower_left_y0)):
+                lower_left_x0 = round(element.x0)
+                lower_left_y0 = round(element.y0)
+            elif(round(element.x1) >= round(upper_right_x1) and round(element.y1) <= round(upper_right_y1)):
+                upper_right_x1 = round(element.x1)
+                upper_right_y1 = round(element.y1)
+        else:
+            lower_left_x0 = round(element.x0)
+            lower_left_y0 = round(element.y0)
+            upper_right_x1 = round(element.x1)
+            upper_right_y1 = round(element.y1)
+        index = index + 1
+    
+    table_coordinate = Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
+    return table_coordinate
 
 if __name__ == '__main__':
     # Arguments
