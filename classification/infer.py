@@ -1,5 +1,5 @@
 """
-This module adds the MI functionality for the segmentation.
+This module adds the MI functionality for the segmentation of documents.
 """
 
 import os
@@ -31,6 +31,14 @@ CATEGORIES2LABELS = {
     3: "list",
     4: "table",
     5: "figure"
+}
+
+CATEGORIES2COLORS = {
+    "text": [0, 0, 255],
+    "title": [0, 255, 255],
+    "list": [255, 0, 255],
+    "table": [255, 0 , 0],
+    "figure": [0, 255, 0]
 }
 
 
@@ -120,11 +128,10 @@ def infer_image_from_file(image_path):
 
     return prediction
 
-# TODO: Refactor
-def infer_image_with_mask(image_path, output_path):
+def infer_image_with_mask(image_path: str, output_path: str, minimum_score: float = 0.7):
     """
     Runs inference on an image. The image is passed as a path to an image file.
-    Writes a new image with masks depicting the predictions.
+    Writes a new image with masks showing the predictions.
     """
     num_classes = 6
 
@@ -160,83 +167,45 @@ def infer_image_with_mask(image_path, output_path):
 
     for pred in prediction:
         for idx, mask in enumerate(pred['masks']):
-            if pred['scores'][idx].item() < 0.7:
+            if pred['scores'][idx].item() < minimum_score:
                 continue
 
-            m = mask[0].mul(255).byte().cpu().numpy()
             box = list(map(int, pred["boxes"][idx].tolist()))
             label = CATEGORIES2LABELS[pred["labels"][idx].item()]
 
             score = pred["scores"][idx].item()
 
-            image = overlay_ann(image, m, box, label, score)
+            image = overlay_annotations(image, box, label, score)
 
     cv2.imwrite(output_path, image)
 
-def multi_infer(in_dir: str, out_dir: str):
+def multi_infer(in_dir: str, out_dir: str, minimum_score: float = 0.7):
     """
     Runs inference on all images in a specified directory
     """
     for file in os.listdir(in_dir,):
         if file.endswith(".png"):
-            infer_image_with_mask(os.path.join(in_dir,file), out_dir)
-
-### Colouring utilities ###
-# TODO: Make colours consistent
+            infer_image_with_mask(os.path.join(in_dir,file), os.path.join(out_dir, os.path.basename(file)), minimum_score)
 
 
-# Might be obsolete
-def overlay_mask(image, mask, alpha=0.5):
-    """
-    Creates the overlay mask.
-    """
-    c = (np.random.random((1, 3)) * 153 + 102).tolist()[0]
-
-    mask = np.dstack([mask.astype(np.uint8)] * 3)
-    mask = cv2.threshold(mask, 127.5, 255, cv2.THRESH_BINARY)[1]
-    inv_mask = 255 - mask
-
-    overlay = image.copy()
-    overlay = np.minimum(overlay, inv_mask)
-
-    color_mask = (mask.astype(np.bool) * c).astype(np.uint8)
-    overlay = np.maximum(overlay, color_mask).astype(np.uint8)
-
-    image = cv2.addWeighted(image, alpha, overlay, 1 - alpha, 0)
-    return image
-
-def overlay_ann(image, mask, box, label, score, alpha=0.5):
+def overlay_annotations(image, box, label, score):
     """
     Creates the overlay mask and adds it to the image.
     """
-    c = np.random.random((1, 3))
-    mask_color = (c * 153 + 102).tolist()[0]
-    text_color = (c * 183 + 72).tolist()[0]
-
-    mask = np.dstack([mask.astype(np.uint8)] * 3)
-    mask = cv2.threshold(mask, 127.5, 255, cv2.THRESH_BINARY)[1]
-    inv_mask = 255 - mask
-
-    overlay = image.copy()
-    overlay = np.minimum(overlay, inv_mask)
-
-    color_mask = (mask.astype(np.bool) * mask_color).astype(np.uint8)
-
-    overlay = np.maximum(overlay, color_mask).astype(np.uint8)
-
-    image = cv2.addWeighted(image, alpha, overlay, 1 - alpha, 0)
-
+    mask_color = CATEGORIES2COLORS[label]
+    image = image.copy()
+    
     # draw on color mask
     cv2.rectangle(
         image,
         (box[0], box[1]),
         (box[2], box[3]),
-        mask_color, 1
+        mask_color, 2
     )
 
     (label_size_width, label_size_height), base_line = \
         cv2.getTextSize(
-            "{}".format(label),
+            "{}: {:.3f}".format(label, score),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.3, 1
         )
@@ -245,7 +214,7 @@ def overlay_ann(image, mask, box, label, score, alpha=0.5):
         image,
         (box[0], box[1] + 10),
         (box[0] + label_size_width, box[1] + 10 - label_size_height),
-        (223, 128, 255),
+        (223, 128, 255), # Color of the box with the label
         cv2.FILLED
     )
 
@@ -259,31 +228,20 @@ def overlay_ann(image, mask, box, label, score, alpha=0.5):
 
     return image
 
-
-def convert_to_mi_format(image):
-    """
-    Convert image to a format usable by the MI-model.
-    """
-    rat = 1300 / image.shape[0]
-    image = cv2.resize(image, None, fx=rat, fy=rat)
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.ToTensor()
-    ])
-    image = transform(image)
-    image = torch.squeeze(image, 0).permute(1, 2, 0).mul(255).numpy().astype(np.uint8)
-    return image
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=str, help="Input path. Either a file or directory.")
-    parser.add_argument("output", type=str, help="Output path. Either a file or a directory.")
+    parser.add_argument("input", metavar = "IN", type = str, help = "Input path. Either a PNG-file or a directory of PNGs.")
+    parser.add_argument("output", metavar = "OUT", type = str, help = "Output path. Either a PNG-file or a directory.")
+    parser.add_argument("-s", "--score", metavar = "S", type = float, default = 0.7, help = "Minimum threshold for the prediction accuracy. Value between 0 to 1.")
     argv = parser.parse_args()
 
     if os.path.isfile(argv.input) and os.path.isfile(argv.output):
-        infer_image_with_mask(argv.input, argv.output)
+        if argv.input.endswith(".png") and argv.output.endswith(".png"):
+            infer_image_with_mask(argv.input, argv.output, argv.score)
+        else:
+            print("Wrong file endings. Input and out files must be PNG-format.")
     elif os.path.isdir(argv.input) and os.path.isdir(argv.output):
-        multi_infer(argv.input, argv.output)
+        multi_infer(argv.input, argv.output, argv.score)
     else:
-        print("Both input and output must both be either file- or directorie-paths.")
+        print("Could not find input file/directory.")
     exit()
