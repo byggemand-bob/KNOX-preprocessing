@@ -3,6 +3,7 @@ import shutil
 import argparse
 import copy
 import cv2
+import The_good_little_miner_that_could as miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
 import utils.extract_area as extractArea
@@ -25,7 +26,6 @@ def segment_document(input_path: str, min_score: float):
             continue
 
     shutil.rmtree(tmp_dir)
-
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """Acquires tables and figures from MI-inference of documents."""
@@ -137,3 +137,4 @@ if __name__ == "__main__":
     parser.add_argument("input")
     argv = parser.parse_args()
     segment_document(argv.input, 0.7)
+
