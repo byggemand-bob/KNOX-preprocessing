@@ -3,9 +3,10 @@ from knox_source_data_io.models.model import Model
 import os
 import text_extraction_example
 
-# Make an object which holds information about the content
-# It should be expanded and iterated upon when we have more work
 class Manual(Model):
+    """
+    Data structure for manuals.
+    """
     publisher: str
     published_at: str
     title: str
@@ -19,6 +20,9 @@ class Manual(Model):
         #self.sections = file_sections
 
 class Section():
+    """
+    Data structure for sections in the manuals.
+    """
     header: str
     pages: []
     paragraphs: []
@@ -29,6 +33,9 @@ class Section():
         self.paragraphs = file_paragraphs
 
 class Paragraph():
+    """
+    Data structure for text paragraphs in the manuals.
+    """
     pages: []
     text: str
     
@@ -52,10 +59,21 @@ class Table(Illustration):
         self.pages = page_span
         self.path = table_path
 
-# Input: Some object, schema location, output path (the written output)
-def create_output(manual, schemaPath, outputPath):
-    #Fill with more information here
-    export_able_object = Manual()
+
+def convert_objects(file_pages):
+    """
+    Used to convert from data structures in models.py to the models in this file for json serrialization
+    """
+    
+    return Manual()
+
+
+
+def create_output(file_pages, schemaPath, outputPath):
+    """
+    Creates the output to JSON.
+    """
+    export_able_object = convert_objects(file_pages)
 
     # Generate
     handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at="", version="1.0"), schemaPath)
@@ -66,6 +84,3 @@ def create_output(manual, schemaPath, outputPath):
     with open(filename, 'w', encoding='utf-8') as outfile:
         handler.write_json(export_able_object, outfile)
 
-#def create_objects():
-    #If the data is not in the models in this file,
-    #Create some function to do so here
