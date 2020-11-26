@@ -35,7 +35,7 @@ def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     prediction = mi.infer_image_from_matrix(image)
 
     for pred in prediction:
-        for idx in enumerate(pred['masks']):
+        for idx, mask in enumerate(pred['masks']):
             label = mi.CATEGORIES2LABELS[pred["labels"][idx].item()]
             
             if pred['scores'][idx].item() < min_score:
