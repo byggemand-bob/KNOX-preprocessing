@@ -6,7 +6,7 @@ import argparse
 import numpy as ny
 import time
 import shutil
-import segment
+#import segment
 import IO_handler
 import datastructure.models as datastructures
 import utils.pdf2png as pdf2png
@@ -68,15 +68,14 @@ class LT_Line_Class(Coordinates):
     def To_String(self):
         return "Coord: (({0}, {1}), ({2}, {3}))".format(round(self.x0), round(self.y0), round(self.x1), round(self.y1))
 
-
 def main(args):
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
 
-    for file in os.listdir(args.input):
-        if file.endswith('.pdf'):
-            doshit_single(file, args)
-    """files = []
+    # for file in os.listdir(args.input):
+    #     if file.endswith('.pdf'):
+    #         doshit_single(file, args)
+    files = []
     list_args = []
     for file in os.listdir(args.input):
         if file.endswith(".pdf"):
@@ -84,7 +83,7 @@ def main(args):
             list_args.append(args)
 
     with cf.ProcessPoolExecutor() as executor:
-        executor.map(doshit, files, list_args) """
+        executor.map(doshit, files, list_args)
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
@@ -93,7 +92,7 @@ def doshit_single(file, args):
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
-        LookThroughLines(page, args)
+        LookThroughLineLists(page, args)
         page1 = make_page(page)
         page2 = segment.infer_page(page.image_name)
         segment.merge_pages(page1, page2)
@@ -409,6 +408,9 @@ def LookThroughLTRectLineList(page, args):
     #     f.write(element.To_String() + "\n")    
     #f.close()
 
+    #Delete single elements in the dictionary:
+    Table_Dictionary = Remove_Single_Elements(Table_Dictionary)
+
     #find retangle coordinates for each grouping of table lines:
     for dicelement in Table_Dictionary.values():
         page.TableCoordinates.append(ReturnRetangleCoordinatesForTable(dicelement))
@@ -425,6 +427,13 @@ def On_Segment(Line_element, dictionary):
                      round(Line_element.y1) - offset <= max(round(element.y0), round(element.y1)) and round(Line_element.y1) + offset >= min(round(element.y0), round(element.y1))):
                     return True, key
     return False, ""
+
+def Remove_Single_Elements(dictionary):
+    dictionary_Copy = dictionary.copy()
+    for key, value in dictionary_Copy.items():
+        if(len(value) == 1):
+            dictionary_Copy[key].pop()
+    return dictionary_Copy
 
 def ReturnRetangleCoordinatesForTable(dicelement):
     lower_left_x0 = 0
