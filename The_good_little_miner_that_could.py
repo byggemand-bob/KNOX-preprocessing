@@ -107,6 +107,7 @@ def doshit(file, args):
         SearchPage(page, args)
         Flip_Y_Coordinates(page)
         LookThroughLineLists(page, args)
+        Check_Text_Objects(page)
         PaintPNGs(page, args)
         print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
         pageNum = pageNum + 1
@@ -459,6 +460,54 @@ def ReturnRetangleCoordinatesForTable(dicelement):
     
     table_coordinate = Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
     return table_coordinate
+
+def Check_Text_Objects(page):
+    if(len(page.LTTextLineList) > 0):
+        if(len(page.LTImageList) > 0):
+            Remove_Text_Within(page, page.LTImageList)
+        if(len(page.LTRectList) > 0):
+            Remove_Text_Within(page, page.LTRectList)
+        if(len(page.TableCoordinates) > 0):
+            Remove_Text_Within(page, page.TableCoordinates)
+
+def Remove_Text_Within(page, object_List):
+    text_Line_List = page.LTTextLineList.copy()
+    for text_Element in text_Line_List:
+        element_Found = False
+        for object_Element in object_List:
+            #If the whole text line is within the object, delete it:
+            if((text_Element.x0 >= object_Element.x0 and text_Element.y0 <= object_Element.y0) and
+               (text_Element.x1 <= object_Element.x1 and text_Element.y1 >= object_Element.y1)):
+                page.LTTextLineList.remove(text_Element)
+                element_Found = True
+                break
+            #If the text line starts within the object (per x-coordinates), also delete it:
+            elif((text_Element.x0 <= object_Element.x1 and text_Element.x0 >= object_Element.x0) and 
+                 (text_Element.y0 <= object_Element.y0 and text_Element.y1 >= object_Element.y1)):
+                page.LTTextLineList.remove(text_Element)
+                element_Found = True
+                break
+            #If the text line ends within the object (per x-coordinates), also delete it:
+            elif((text_Element.x1 >= object_Element.x0 and text_Element.x1 <= object_Element.x1) and 
+                 (text_Element.y0 <= object_Element.y0 and text_Element.y1 >= object_Element.y1)):
+                page.LTTextLineList.remove(text_Element)
+                element_Found = True
+                break  
+            #If the text lines bottom is partly within the object (per y-coordinates), also delete it:
+            elif((text_Element.y0 >= object_Element.y1 and object_Element.y0 >= text_Element.y0) and 
+                 (text_Element.x1 <= object_Element.x1 and text_Element.x0 >= object_Element.x0)):
+                page.LTTextLineList.remove(text_Element)
+                element_Found = True
+                break
+            #If the text lines top is partly within the object (per y-coordinates), also delete it:
+            elif((text_Element.y1 <= object_Element.y0 and object_Element.y1 <= text_Element.y1) and 
+                 (text_Element.x1 <= object_Element.x1 and text_Element.x0 >= object_Element.x0)):
+                page.LTTextLineList.remove(text_Element)
+                element_Found = True
+                break
+            #Should there be a check which also deletes it if it starts before and ends after the object (goes through)? -Mette #TODO
+        if(element_Found == True):
+            continue
 
 if __name__ == '__main__':
     # Arguments
