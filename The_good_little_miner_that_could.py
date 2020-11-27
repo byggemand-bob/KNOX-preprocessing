@@ -94,7 +94,9 @@ def doshit_single(file, args):
         SearchPage(page, args)
         LookThroughLineLists(page, args)
         page1 = make_page(page)
-        page2 = segment.infer_page(page.image_name)
+        print(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
+        page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
+        print(str(page1.page_number) + ' vs ' + str(page2.page_number))
         segment.merge_pages(page1, page2)
 
 def doshit(file, args): 
@@ -187,7 +189,8 @@ def SearchPage(page, args):
     
 def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
-    result.add_from_page_manuel([], convert_to_pixel_height(page, page.LTImageList), convert_to_pixel_height(page, page.LTRectList))
+    result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList))
+    return result
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []
@@ -198,6 +201,13 @@ def convert_to_pixel_height(page: PDF_page, object_list: list):
                                            page.actualWidthModifier * element.y1))
     
     return result_elements
+    
+def convert_to_datastructure(object_list: list, desired_object: object):
+    result_obj_list = []
+    for obj in object_list:
+    	result_obj_list.append(desired_object(obj))
+    	
+    return result_obj_list
 
 
 def Check_If_Line(x0, y0, x1, y1):
