@@ -1,4 +1,4 @@
-from pdfminer.layout import LTTextLine, LTTextLineHorizontal, LTTextLineVertical
+from pdfminer.layout import LTTextLine, LTTextLineHorizontal, LTTextLineVertical, LTChar
 import PDFminerLayoutExtractor
 import PDFminerLineStreamer
 import CoordinatesCalculator
@@ -15,6 +15,8 @@ class TextAnalyser:
     __PageIndex__ = None
     __LastLinesFontSize__ = -100000
     __CurrentText__ = None
+    __CurrentTextStart__ = None
+    __CurrentTextEnd__ = None
     __CurrentTextFontSize__ = None
     __FollowingLine__ = None
     
@@ -79,15 +81,28 @@ class TextAnalyser:
         subnum = ""
 
         for x in range(0, section_level):
-            subnum += "Sub"
+            subnum += "SUB"
 
-        print(subnum + "-Section")
-        print("TITLE: " + Section.Title)
-        print()
-        print(Section.Text)
+        print(subnum + "-SECTION:")
+        if Section.Title == "":
+            print("TITLE: ~~~No Title~~~")
+        else:
+            print("TITLE: " + Section.Title)
+        print("SectionPage: " + str(Section.StartingPage) + ", " + str(Section.EndingPage))
 
-        for X in Section.Sections:
-            self.TestPrintSections(X, section_level + 1)
+        print("Section Text:\n" + Section.Text)
+
+        for SubSection in Section.Sections:
+            if SubSection == Section:
+                print("\n###################################### ERROR #################################################")
+                print("###################################### ERROR #################################################")
+                print("###################################### ERROR #################################################")
+                print("           infinite loop subsection error. One of the section subsections is itself")
+                print("###################################### ERROR #################################################")
+                print("###################################### ERROR #################################################")
+                print("###################################### ERROR #################################################\n")
+                break
+            self.TestPrintSections(SubSection, section_level + 1)
 
     def SegmentText(self):
         PDF = SegmentedPDF.SegPDF()
@@ -126,44 +141,59 @@ class TextAnalyser:
         while self.__CurrentText__ != None:
             NewSection = SegmentedPDF.Section()
 
-            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.02):
+            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
                 NewSection.Text = self.__CurrentText__
+                NewSection.StartingPage = self.__CurrentTextStart__
+                NewSection.EndingPage = self.__CurrentTextEnd__
                 PDF.Sections.append(NewSection)
+                self.__NextText__()
             else:
                 NewSection.Title = self.__CurrentText__
+                TitleFontSize = self.__CurrentTextFontSize__
+                NewSection.StartingPage = self.__CurrentTextStart__
                 self.__NextText__()
-                self.__FindSubSection__(NewSection, self.__CurrentTextFontSize__)
+                self.__FindSubSection__(NewSection, TitleFontSize)
                 PDF.Sections.append(NewSection)
-            self.__NextText__()
 
     def __FindSubSection__(self, CurrentSection, TitleFontSize):
         while self.__CurrentText__ != None:
-            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.02):
+            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
                 CurrentSection.Text += self.__CurrentText__
-                return
-            elif self.__IsSimularFontSize__(self.__CurrentTextFontSize__, TitleFontSize, 0.02) or TitleFontSize < self.__CurrentTextFontSize__:
+                self.__NextText__()
+            elif self.__IsSimularFontSize__(self.__CurrentTextFontSize__, TitleFontSize, 0.01) or TitleFontSize < self.__CurrentTextFontSize__:
+                CurrentSection.EndingPage = self.__CurrentTextEnd__
                 return
             else:
                 NewSection = SegmentedPDF.Section()
                 NewSection.Title = self.__CurrentText__
+                NewSectionTitleFontSize = self.__CurrentTextFontSize__
+                NewSection.StartingPage = self.__CurrentTextStart__
                 self.__NextText__()
-                self.__FindSubSection__(NewSection, self.__CurrentTextFontSize__)
+                self.__FindSubSection__(NewSection, NewSectionTitleFontSize)
                 CurrentSection.Sections.append(NewSection)
+        
+        CurrentSection.EndingPage = self.__CurrentTextEnd__
 
     def __NextText__(self):
         """Groups all sequential text of simular fontsize, saving results in self.__CurrentText__ and self.__CurrentTextFontSize__"""
         if self.__FollowingLine__ != None:
             self.__CurrentTextFontSize__ = self.FontSize(self.__FollowingLine__)
             self.__CurrentText__ = self.__FollowingLine__.get_text()
+            self.__CurrentTextStart__ = self.__PageIndex__ + 1
 
             self.__NextLine__()
 
-            while self.__IsSimularFontSize__(self.__CurrentTextFontSize__, self.FontSize(self.__FollowingLine__), 0.02):
+            while self.__IsSimularFontSize__(self.__CurrentTextFontSize__, self.FontSize(self.__FollowingLine__), 0.01):
                 self.__CurrentText__ += self.__FollowingLine__.get_text()
                 self.__NextLine__()
         else:
             self.__CurrentText__ = None
             self.__CurrentTextFontSize__ = None
+
+        if self.__PageIndex__ < len(self.__Pages__):
+            self.__CurrentTextEnd__ = self.__PageIndex__ + 1
+        else:
+            self.__CurrentTextEnd__ = len(self.__Pages__)
 
     def __NextLine__(self):
         """Find the next line and saves it in self.__FollowingLine__"""

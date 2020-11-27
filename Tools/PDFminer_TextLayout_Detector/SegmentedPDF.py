@@ -2,7 +2,9 @@ class SegPDF:
     PDFtitle = ""
     PDFSubTitle = ""
     Text = ""
-    Sections = []
+    
+    def __init__(self):
+        self.Sections = []
 
     def AddSection(self, section):
         self.Sections.append(section)
@@ -10,7 +12,11 @@ class SegPDF:
 class Section:
     Title = ""
     Text = ""
-    Sections = []
+    StartingPage = None
+    EndingPage = None
+
+    def __init__(self):
+        self.Sections = []
 
     def AddSection(self, section):
         self.Sections.append(section)
