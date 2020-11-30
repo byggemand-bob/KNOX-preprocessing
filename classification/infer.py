@@ -22,7 +22,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 
-CHECKPOINT_PATH = "model_196000.pth"
+CHECKPOINT_PATH = os.path.join(os.getcwd(),'classification',"model_196000.pth")
 
 CATEGORIES2LABELS = {
     0: "bg",

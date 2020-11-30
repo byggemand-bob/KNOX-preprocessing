@@ -3,34 +3,54 @@ import shutil
 import argparse
 import copy
 import cv2
+import concurrent.futures as cf
+import IO_handler
 import The_good_little_miner_that_could as miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
 import utils.extract_area as extractArea
 import datastructure.models as datastructures
 
-def segment_document(input_path: str, min_score: float):
+def segment_documents(args: str, min_score: float):
     """
     Does document segmentation of a pdf file and produces a json file with the information found.
     """
-    pages = []
-    tmp_dir = os.path.join(os.getcwd(), "tmp", os.path.basename(input_path).replace(".pdf", ""))
-    os.makedirs(tmp_dir)
-    pdf2png.convert(input_path, tmp_dir)
+    # pages = []
+    # tmp_dir = os.path.join(os.getcwd(), "tmp", os.path.basename(input_path).replace(".pdf", ""))
+    # os.makedirs(tmp_dir)
+    # pdf2png.convert(input_path, tmp_dir)
 
-    for filename in os.listdir(tmp_dir):
-        if filename.endswith(".png"):
-            mi_page = infer_page(os.path.join(tmp_dir, filename))
+    # for filename in os.listdir(tmp_dir):
+    #     if filename.endswith(".png"):
+    #         mi_page = infer_page(os.path.join(tmp_dir, filename))
 
-        else:
-            continue
+    #     else:
+    #         continue
 
-    shutil.rmtree(tmp_dir)
+    #shutil.rmtree(tmp_dir)
+    IO_handler.folder_prep(args.output, args.clean)
+    pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
+
+    for file in os.listdir(args.input):
+        if file.endswith('.pdf'):
+            segment_document(file, args)
+
+def segment_document(file: str, args):
+    the_final_pages = []
+    pageNum = 0
+    current_PDF = PDF_file(file, args)
+    for page in current_PDF.pages:
+        SearchPage(page, args)
+        LookThroughLineLists(page, args)
+        page1 = make_page(page)
+        page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
+        print(str(page1.page_number) + ' vs ' + str(page2.page_number))
+        the_final_pages.append(segment.merge_pages(page1, page2))
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """Acquires tables and figures from MI-inference of documents."""
     #TODO: Make split more unique, so that files that naturally include "_page" do not fail
-    page_data = datastructures.Page(os.path.basename(image_path).split("_page")[1])
+    page_data = datastructures.Page(int(os.path.basename(image_path).split("_page")[1].replace('.png','')))
     image = cv2.imread(image_path)
     prediction = mi.infer_image_from_matrix(image)
 
@@ -40,7 +60,6 @@ def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
             
             if pred['scores'][idx].item() < min_score:
                 continue
-
             area = convert2coords(image, list(map(int, pred["boxes"][idx].tolist())))
             #score = pred["scores"][idx].item()
 
@@ -48,8 +67,8 @@ def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
                 table = datastructures.TableSegment(area)
                 page_data.tables.append(table)
             elif label == "figure":
-                image = datastructures.ImageSegment(area)
-                page_data.images.append(image)
+                figure = datastructures.ImageSegment(area)
+                page_data.images.append(figure)
             else:
                 continue
 
@@ -94,23 +113,24 @@ def remove_duplicates(list1: list, list2: list):
     """
     Removes elements that reside in other elements. These would be redundant if left in.
     """
-    for object1 in list1.objects:
-        for object2 in list2.objects:
-            if object1.coordinates.area() >= object2.coordinates.area():
-                if (object2.coordinates.x1 >= object1.coordinates.x1 and
-                    object2.coordinates.x2 <= object1.coordinates.x2 and
-                    object2.coordinates.y1 >= object1.coordinates.y1 and
-                    object2.coordinates.y2 <= object1.coordinates.y2):
+    for object1 in list1:
+        for object2 in list2:
+            print(str(object1.coordinates.x1))
+            print(str(object2.coordinates.x1))
+            if (object2.coordinates.x1 >= object1.coordinates.x1 and
+                object2.coordinates.x2 <= object1.coordinates.x2 and
+                object2.coordinates.y1 >= object1.coordinates.y1 and
+                object2.coordinates.y2 <= object1.coordinates.y2):
 
-                    list2.objects.remove(object2)
-            else:
-                if (object1.coordinates.x1 >= object2.coordinates.x1 and
-                    object1.coordinates.x2 <= object2.coordinates.x2 and
-                    object1.coordinates.y1 <= object2.coordinates.y1 and
-                    object1.coordinates.y2 >= object2.coordinates.y2):
+                list2.remove(object2)
 
-                    list1.objects.remove(object1)
-                    break
+            elif (object1.coordinates.x1 >= object2.coordinates.x1 and
+                object1.coordinates.x2 <= object2.coordinates.x2 and
+                object1.coordinates.y1 <= object2.coordinates.y1 and
+                object1.coordinates.y2 >= object2.coordinates.y2):
+
+                list1.remove(object1)
+                break
 
 if __name__ == "__main__":
     # page1 = datastructures.Page(1)

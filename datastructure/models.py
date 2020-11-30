@@ -39,7 +39,7 @@ class ImageSegment:
     Describes an imagesegment found on a page.
     """
     byte_value = None
-    coordinates = None
+    coordinates: Coordinates = None
     page_number: int
     def __init__(self, coordinates):
         self.coordinates = coordinates

@@ -6,7 +6,7 @@ import argparse
 import numpy as ny
 import time
 import shutil
-#import segment
+import segment
 import IO_handler
 import datastructure.models as datastructures
 import utils.pdf2png as pdf2png
@@ -72,10 +72,10 @@ def main(args):
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
 
-    # for file in os.listdir(args.input):
-    #     if file.endswith('.pdf'):
-    #         doshit_single(file, args)
-    files = []
+    for file in os.listdir(args.input):
+        if file.endswith('.pdf'):
+            doshit_single(file, args)
+    """ files = []
     list_args = []
     for file in os.listdir(args.input):
         if file.endswith(".pdf"):
@@ -83,21 +83,21 @@ def main(args):
             list_args.append(args)
 
     with cf.ProcessPoolExecutor() as executor:
-        executor.map(doshit, files, list_args)
+        executor.map(doshit, files, list_args) """
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
 def doshit_single(file, args):
+    the_final_pages = []
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
         LookThroughLineLists(page, args)
         page1 = make_page(page)
-        print(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
-        segment.merge_pages(page1, page2)
+        the_final_pages.append(segment.merge_pages(page1, page2))
 
 def doshit(file, args): 
     pageNum = 0
@@ -189,16 +189,16 @@ def SearchPage(page, args):
     
 def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
-    result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList))
+    result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.TableSegment))
     return result
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []
     for element in object_list:
-        result_elements.append(Coordinates(page.actualHeightModifier * element.x0,
-                                           page.actualWidthModifier * element.y0,
-                                           page.actualHeightModifier * element.x1,
-                                           page.actualWidthModifier * element.y1))
+        result_elements.append(datastructures.Coordinates(page.actualHeightModifier * element.x0,
+                                                          page.actualWidthModifier * element.y0,
+                                                          page.actualHeightModifier * element.x1,
+                                                          page.actualWidthModifier * element.y1))
     
     return result_elements
     
@@ -284,7 +284,7 @@ def PaintPNGs(page, args):
     image = Paint(image, page, page.LTTextLineList, colorBlack, thickness)    
     print(page.image_name)
 
-    cv2.imwrite(os.path.join(os.path.join(args.output, ANNOTATED), page.image_name), image) #save picture
+    cv2.imwrite(os.path.join(args.output, ANNOTATED, page.image_name, image)) #save picture
 
 def Paint(image, page, objectList, color, thickness):
     for element in objectList:
