@@ -240,42 +240,42 @@ class TextAnalyser:
 
     def __FindColumns__(self, Page):
         # Initializes first column
+        AllColumns = []
         if len(Page) != 0:
             LastFontSize = self.FontSize(Page[0])
-            AllColumns = []
             ColumnLines = [Page[0]]
             ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[0])
 
-        # test all lines on page after the first
-        for x in range(1, len(Page)):
-            VertDist = self.CoordsCalc.CompareVerticalDist(Page[x], ColumnCoords)
-            HoriDist = self.CoordsCalc.CompareHorizontalDist(Page[x], ColumnCoords)
+            # test all lines on page after the first
+            for x in range(1, len(Page)):
+                VertDist = self.CoordsCalc.CompareVerticalDist(Page[x], ColumnCoords)
+                HoriDist = self.CoordsCalc.CompareHorizontalDist(Page[x], ColumnCoords)
 
-            # test whether the new line is above the column coords
-            # or if its larger then 2.5 line gab, compared to lastline
-            # or if the column doesn't vertically overlap
-            if VertDist > 0 or VertDist < LastFontSize * -2.5 or HoriDist != 0:
-                # new column
+                # test whether the new line is above the column coords
+                # or if its larger then 2.5 line gab, compared to lastline
+                # or if the column doesn't vertically overlap
+                if VertDist > 0 or VertDist < LastFontSize * -2.5 or HoriDist != 0:
+                    # new column
+                    Column = [ColumnCoords, ColumnLines]
+                    AllColumns.append(Column)
+                    ColumnLines = [Page[x]]
+                    ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[x])
+                    LastFontSize = self.FontSize(Page[x])
+                else:
+                    # Add to column
+                    LastFontSize = self.FontSize(Page[x])
+                    ColumnLines.append(Page[x])
+                    ColumnCoords.y0 = Page[x].y0
+                    if Page[x].x0 < ColumnCoords.x0:
+                        ColumnCoords.x0 = Page[x].x0
+                    if Page[x].x1 > ColumnCoords.x1:
+                        ColumnCoords.x1 = Page[x].x1
+
+
+            # adds last column to columns
+            if len(ColumnLines) != 0:
                 Column = [ColumnCoords, ColumnLines]
                 AllColumns.append(Column)
-                ColumnLines = [Page[x]]
-                ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[x])
-                LastFontSize = self.FontSize(Page[x])
-            else:
-                # Add to column
-                LastFontSize = self.FontSize(Page[x])
-                ColumnLines.append(Page[x])
-                ColumnCoords.y0 = Page[x].y0
-                if Page[x].x0 < ColumnCoords.x0:
-                    ColumnCoords.x0 = Page[x].x0
-                if Page[x].x1 > ColumnCoords.x1:
-                    ColumnCoords.x1 = Page[x].x1
-
-
-        # adds last column to columns
-        if len(ColumnLines) != 0:
-            Column = [ColumnCoords, ColumnLines]
-            AllColumns.append(Column)
 
         if len(AllColumns) > 0:
             return AllColumns

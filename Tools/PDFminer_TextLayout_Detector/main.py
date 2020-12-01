@@ -3,4 +3,4 @@ import IgnoreCoordinates
 
 TextAnalyser = TAnalyser.TextAnalyser('/PDFs/ALPHA1.pdf', IgnoreCoordinates.IgnoreCoordinates())
 
-TextAnalyser.__Test__()
+TextAnalyser.segment_pages()

@@ -6,23 +6,23 @@ class Coordinates:
     """
     Describes an area defined by two sets of coordinates.
     """
-    def __init__(self, x1: int, y1 : int, x2: int, y2: int):
+    def __init__(self, x1: float, y1 : float, x2: float, y2: float):
+        self.x0 = x0
+        self.y0 = y0
         self.x1 = x1
         self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
 
     def to_string(self) -> str:
         """
         Return the coordinates in string format.
         """
-        return "({0}, {1})({2}, {3})".format(self.x1, self.y1, self.x2, self.y2)
+        return "({0}, {1})({2}, {3})".format(self.x0, self.y0, self.x1, self.y1)
 
-    def area(self) -> int:
+    def area(self) -> float:
         """
         Calculates and returns the size of the area spanning the coordinates.
         """
-        return abs(self.x1 - self.x2) * abs(self.y1 - self.y2)
+        return abs(self.x0 - self.x1) * abs(self.y0 - self.y1)
 
 class TextSegment:
     """

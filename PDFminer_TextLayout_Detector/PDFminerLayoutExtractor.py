@@ -16,7 +16,7 @@ class LayoutExtractor:
         self.device = PDFPageAggregator(self.rsrcmgr, laparams=LAParams(detect_vertical=True))
         self.interpreter = PDFPageInterpreter(self.rsrcmgr, self.device)
         self.PDFpath = PDFpath
-        self.fp = open(os.getcwd() + PDFpath, 'rb')
+        self.fp = open(os.path.join(os.getcwd(), PDFpath), 'rb')
 
     def __InitializePDF__(self):
         """Initializes PDF for other operations"""
