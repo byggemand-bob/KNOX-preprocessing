@@ -6,7 +6,7 @@ class Coordinates:
     """
     Describes an area defined by two sets of coordinates.
     """
-    def __init__(self, x1: float, y1 : float, x2: float, y2: float):
+    def __init__(self, x0: float, y0 : float, x1: float, y1: float):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1

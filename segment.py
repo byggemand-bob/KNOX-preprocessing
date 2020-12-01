@@ -41,7 +41,7 @@ def segment_document(file: str, args):
     for page in current_PDF.pages:
         miner.SearchPage(page, args)
         miner.LookThroughLineLists(page, args)
-        page1 = make_page(page)
+        page1 = miner.make_page(page)
         page2 = infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
         the_final_pages.append(merge_pages(page1, page2))
