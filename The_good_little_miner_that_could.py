@@ -195,10 +195,10 @@ def make_page(page: PDF_page):
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []
     for element in object_list:
-        result_elements.append(datastructures.Coordinates(page.actualHeightModifier * element.x0,
-                                                          page.actualWidthModifier * element.y0,
-                                                          page.actualHeightModifier * element.x1,
-                                                          page.actualWidthModifier * element.y1))
+        result_elements.append(datastructures.Coordinates(page.actualWidthModifier * element.x0,
+                                                          page.actualHeightModifier * element.y0,
+                                                          page.actualWidthModifier * element.x1,
+                                                          page.actualHeightModifier * element.y1))
     
     return result_elements
     

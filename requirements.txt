@@ -4,5 +4,6 @@ beautifulsoup4
 pdfminer
 PyMuPDF
 opencv-python
+torch
 torchvision
 

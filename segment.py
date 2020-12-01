@@ -37,15 +37,14 @@ def segment_documents(args: str, min_score: float):
 
 def segment_document(file: str, args):
     the_final_pages = []
-    pageNum = 0
-    current_PDF = PDF_file(file, args)
+    current_PDF = miner.PDF_file(file, args)
     for page in current_PDF.pages:
-        SearchPage(page, args)
-        LookThroughLineLists(page, args)
+        miner.SearchPage(page, args)
+        miner.LookThroughLineLists(page, args)
         page1 = make_page(page)
-        page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
+        page2 = infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
-        the_final_pages.append(segment.merge_pages(page1, page2))
+        the_final_pages.append(merge_pages(page1, page2))
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """Acquires tables and figures from MI-inference of documents."""
@@ -152,9 +151,12 @@ if __name__ == "__main__":
     # for table in page3.tables:
     #     print(table.coordinates.to_string())
     # exit()
+    # Arguments
+    argparser = argparse.ArgumentParser(description="WIP")
+    argparser.add_argument("-i", "--input", action="store", default=os.path.join(os.getcwd(), 'src'), help="Path to input folder")
+    argparser.add_argument("-o", "--output", action="store", default=os.path.join(os.getcwd(), 'out'), help="Path to output folder")
+    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.")
+    args = argparser.parse_args()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input")
-    argv = parser.parse_args()
-    segment_document(argv.input, 0.7)
+    segment_documents(args, 0.7)
 
