@@ -8,6 +8,7 @@ import time
 import shutil
 import segment
 import IO_handler
+from datastructure.models import Coordinates
 import datastructure.models as datastructures
 import utils.pdf2png as pdf2png
 import concurrent.futures as cf
@@ -56,17 +57,6 @@ class PDF_page:
 
         self.actualHeightModifier = self.height/self.PDFfile_height
         self.actualWidthModifier = self.width/self.PDFfile_width
-
-class Coordinates(): 
-    def __init__(self, x0, y0, x1, y1): 
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-
-class LT_Line_Class(Coordinates):
-    def To_String(self):
-        return "Coord: (({0}, {1}), ({2}, {3}))".format(round(self.x0), round(self.y0), round(self.x1), round(self.y1))
 
 def main(args):
     IO_handler.folder_prep(args.output, args.clean)
@@ -139,10 +129,10 @@ def SearchPage(page, args):
             result = Check_If_Line(x0, y0, x1, y1) #check if the rectangle is a line instead of a rectangle.
             if(result[0] == True): #it is a line
                 if(result[1] == 1): #horizontal line
-                    newLTLine = LT_Line_Class(x0, y0, x1, y0) 
+                    newLTLine = Coordinates(x0, y0, x1, y0) 
                     page.LTRectLineList.append(newLTLine)
                 elif(result[1] == 2): #vertical line
-                    newLTLine = LT_Line_Class(x0, y0, x0, y1) 
+                    newLTLine = Coordinates(x0, y0, x0, y1) 
                     page.LTRectLineList.append(newLTLine)
             else:
                 newLTRect = Coordinates(x0, y0, x1, y1)
@@ -172,7 +162,7 @@ def SearchPage(page, args):
         if isinstance(lobj, LTLine):
             index = index + 1
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-            newLTLine = LT_Line_Class(x0, y0, x1, y1)
+            newLTLine = Coordinates(x0, y0, x1, y1)
             page.LTLineList.append(newLTLine)
 
 
