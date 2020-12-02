@@ -152,10 +152,10 @@ class TextAnalyser:
                 TitleFontSize = self.__CurrentTextFontSize__
                 NewSection.StartingPage = self.__CurrentTextStart__
                 self.__NextText__()
-                self.__FindSubSection__(NewSection, TitleFontSize)
+                self.__FindSubSections____(NewSection, TitleFontSize)
                 PDF.Sections.append(NewSection)
 
-    def __FindSubSection__(self, CurrentSection, TitleFontSize):
+    def __FindSubSections__(self, CurrentSection, TitleFontSize):
         while self.__CurrentText__ != None:
             if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
                 CurrentSection.Text += self.__CurrentText__
@@ -169,7 +169,7 @@ class TextAnalyser:
                 NewSectionTitleFontSize = self.__CurrentTextFontSize__
                 NewSection.StartingPage = self.__CurrentTextStart__
                 self.__NextText__()
-                self.__FindSubSection__(NewSection, NewSectionTitleFontSize)
+                self.__FindSubSections____(NewSection, NewSectionTitleFontSize)
                 CurrentSection.Sections.append(NewSection)
         
         CurrentSection.EndingPage = self.__CurrentTextEnd__
