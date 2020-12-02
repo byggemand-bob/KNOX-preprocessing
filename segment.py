@@ -13,6 +13,7 @@ import utils.pdf2png as pdf2png
 import utils.extract_area as extractArea
 import datastructure.models as datastructures
 from IgnoreCoordinates import IgnoreCoordinates
+import manual_wrapper as wrapper
 
 def segment_documents(args: str, min_score: float):
     """
@@ -60,9 +61,12 @@ def segment_document(file: str, args):
     TextAnal = TextAnalyser(os.path.join(args.input, current_PDF.file_name), IgnoreCoords)
     TextAnal.__Test__()
     PDF = TextAnal.SegmentText()
+    wrapper.create_output(TextAnal, schema_path, output_path)
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
-    """Acquires tables and figures from MI-inference of documents."""
+    """
+    Acquires tables and figures from MI-inference of documents.
+    """
     #TODO: Make split more unique, so that files that naturally include "_page" do not fail
     page_data = datastructures.Page(int(os.path.basename(image_path).split("_page")[1].replace('.png','')))
     image = cv2.imread(image_path)

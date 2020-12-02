@@ -2,6 +2,7 @@ from knox_source_data_io.io_handler import *
 from knox_source_data_io.models.model import Model
 import os
 import text_extraction_example
+import datetime
 
 class Manual(Model):
     """
@@ -69,18 +70,19 @@ def convert_objects(file_pages):
 
 
 
-def create_output(file_pages, schemaPath, outputPath):
+def create_output(PDF_pages:, schema_path, output_path):
     """
     Creates the output to JSON.
     """
-    export_able_object = convert_objects(file_pages)
+
+    export_able_object = convert_objects()
 
     # Generate
-    handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at="", version="1.0"), schemaPath)
+    handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at=datetime.datetime.now(), version="1.0"), schema_path)
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, outputPath) #Rename when we know what the location is
     
     # Serialize object to json
-    with open(filename, 'w', encoding='utf-8') as outfile:
+    with open(filename, 'w', encoding='utf-16') as outfile:
         handler.write_json(export_able_object, outfile)
 
