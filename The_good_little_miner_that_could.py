@@ -83,7 +83,10 @@ def doshit_single(file, args):
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
         SearchPage(page, args)
+        Flip_Y_Coordinates(page)
         LookThroughLineLists(page, args)
+        Check_Text_Objects(page)
+        PaintPNGs(page, args)
         page1 = make_page(page)
         page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
@@ -127,11 +130,11 @@ def SearchPage(page, args):
             index = index + 1
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
             result = Check_If_Line(x0, y0, x1, y1) #check if the rectangle is a line instead of a rectangle.
-            if(result[0] == True): #it is a line
-                if(result[1] == 1): #horizontal line
+            if(result != 0): #it is a line
+                if(result == 1): #horizontal line
                     newLTLine = Coordinates(x0, y0, x1, y0) 
                     page.LTRectLineList.append(newLTLine)
-                elif(result[1] == 2): #vertical line
+                elif(result == 2): #vertical line
                     newLTLine = Coordinates(x0, y0, x0, y1) 
                     page.LTRectLineList.append(newLTLine)
             else:
@@ -199,22 +202,18 @@ def convert_to_datastructure(object_list: list, desired_object: object):
     	
     return result_obj_list
 
-
 def Check_If_Line(x0, y0, x1, y1):
-    is_It_Line = False
     x = abs(x1 - x0)
     y = abs(y1 - y0)
-    threshold = 5 #I made this variable up, but it works
+    threshold = 5
 
     if(y < threshold): #horizontal line
-        is_It_Line = True
-        return is_It_Line, 1
+        return 1
 
     if(x < threshold): #vertical line
-        is_It_Line = True
-        return is_It_Line, 2
+        return 2
 
-    return is_It_Line, 0
+    return 0
 
 def SaveFigure(lobj, page, figureIndex, args):
     file_stream = lobj.stream.get_rawdata()
@@ -274,7 +273,7 @@ def PaintPNGs(page, args):
     image = Paint(image, page, page.LTTextLineList, colorBlack, thickness)    
     print(page.image_name)
 
-    cv2.imwrite(os.path.join(args.output, ANNOTATED, page.image_name, image)) #save picture
+    cv2.imwrite(os.path.join(args.output, ANNOTATED, page.image_name), image) #save picture
 
 def Paint(image, page, objectList, color, thickness):
     for element in objectList:
