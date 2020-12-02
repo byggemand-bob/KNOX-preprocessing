@@ -61,7 +61,9 @@ def segment_document(file: str, args):
     TextAnal = TextAnalyser(os.path.join(args.input, current_PDF.file_name), IgnoreCoords)
     TextAnal.__Test__()
     PDF = TextAnal.SegmentText()
-    wrapper.create_output(TextAnal, schema_path, output_path)
+
+    #Create output
+    wrapper.create_output(PDF, schema_path, output_path)
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """
