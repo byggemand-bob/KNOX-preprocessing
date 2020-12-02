@@ -86,7 +86,6 @@ def doshit_single(file, args):
         Flip_Y_Coordinates(page)
         LookThroughLineLists(page, args)
         Check_Text_Objects(page)
-        PaintPNGs(page, args)
         page1 = make_page(page)
         page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))

@@ -13,7 +13,7 @@ import utils.pdf2png as pdf2png
 import utils.extract_area as extractArea
 import datastructure.models as datastructures
 from IgnoreCoordinates import IgnoreCoordinates
-import manual_wrapper as wrapper
+import IO_wrapper.manual_wrapper as wrapper
 
 def segment_documents(args: str, min_score: float):
     """
@@ -45,8 +45,9 @@ def segment_document(file: str, args):
     current_PDF = miner.PDF_file(file, args)
     for page in current_PDF.pages:
         miner.SearchPage(page, args)
+        miner.Flip_Y_Coordinates(page)
         miner.LookThroughLineLists(page, args)
-        #miner.Check_Text_Objects(page)
+        miner.Check_Text_Objects(page)
         page1 = miner.make_page(page)
         page2 = infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
