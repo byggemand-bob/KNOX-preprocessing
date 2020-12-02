@@ -20,10 +20,11 @@ class Schema_Section():
     """
     Data structure for sections in the manuals.
     """
-    def __init__(self, section_header, section_pages, file_paragraphs):
+    def __init__(self, section_header, file_paragraphs, subsections):
         self.header = section_header
-        self.pages = section_pages
+        #self.pages = section_pages
         self.paragraphs = file_paragraphs
+        self.subsections = subsections
 
 class Schema_Paragraph():
     """
@@ -49,14 +50,6 @@ class Table(Illustration):
         self.path = table_path
 
 
-def convert_objects(file_pages):
-    """
-    Used to convert from data structures in models.py to the models in this file for json serrialization
-    """
-    
-    return Manual()
-
-
 def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
     """
     Creates the output to JSON.
@@ -65,7 +58,7 @@ def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
 
     for section in segmented_PDF:
         paragraph = Schema_Paragraph(section.Text)
-        span = [1,2]
+        #span = [1,2]
         output_section.append(Schema_Section(section.Title, paragraph))
     
 
@@ -79,3 +72,13 @@ def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
     # Serialize object to json
     with open(filename, 'w', encoding='utf-16') as outfile:
         handler.write_json(export_able_object, outfile)
+
+
+def visit_subsections(root: SegmentedPDF.Section):
+    schema_section = []
+    if root.Sections is not None:
+        for section in root.Sections:
+            paragraph = Schema_Paragraph(section.Text)
+            schema_section.append(Schema_Section(section.Title, paragraph, visit_subsections(section)))
+        return schema_section
+    return None
