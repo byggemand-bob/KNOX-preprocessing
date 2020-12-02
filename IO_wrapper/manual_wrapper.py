@@ -55,19 +55,15 @@ def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
     Creates the output to JSON.
     """
     output_sections = []
-
     for section in segmented_PDF:
-        paragraph = Schema_Paragraph(section.Text)
-        #span = [1,2]
-        output_section.append(Schema_Section(section.Title, paragraph))
-    
+        output_sections.append(visit_subsections(section))    
 
     export_able_object = Schema_Manual(segmented_PDF.PDFtitle, "Grundfos", "", output_sections)
 
     # Generate
-    handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at=datetime.datetime.now(), version="1.0"), schema_path)
+    handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at=str(datetime.datetime.now()), version="1.0"), schema_path)
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, output_path) #Rename when we know what the location is
+    filename = os.path.join(dirname, "output.json") #Rename when we know what the location is
     
     # Serialize object to json
     with open(filename, 'w', encoding='utf-16') as outfile:
