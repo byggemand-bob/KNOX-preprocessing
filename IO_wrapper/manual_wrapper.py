@@ -1,7 +1,6 @@
 from knox_source_data_io.io_handler import *
 from knox_source_data_io.models.model import Model
 import os
-import text_extraction_example
 import datetime
 import SegmentedPDF
 
