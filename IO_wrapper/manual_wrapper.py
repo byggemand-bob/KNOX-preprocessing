@@ -48,7 +48,7 @@ class Table():
         self.value = table_code
 
 
-def create_output(segmented_PDF: SegmentedPDF.SegPDF, pdf_figures, pdf_tables, schema_path, output_path):
+def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
     """
     Creates the output to JSON using knox-source-data-io module: https://git.its.aau.dk/Knox/source-data-io
     """
@@ -76,6 +76,7 @@ def visit_subsections(root: SegmentedPDF.Section):
     if root.Sections is not None:
         for section in root.Sections:
             paragraph = Schema_Paragraph(section.Text)
-            schema_section.append(Schema_Section(section.Title, paragraph, visit_subsections(section)))
+            page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
+            schema_section.append(Schema_Section(section.Title, page, paragraph, visit_subsections(section)))
         return schema_section
     return None
