@@ -73,8 +73,8 @@ def visit_subsections(root: SegmentedPDF.Section):
     """
     Recursive visitor for the sections and their subsections.
     """
-    schema_section = []
     if root.Sections is not None:
+        schema_section = []
         for section in root.Sections:
             paragraph = Schema_Paragraph(section.Text)
             if (section.StartingPage == section.EndingPage):

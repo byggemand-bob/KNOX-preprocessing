@@ -12,7 +12,7 @@
                 "version": {"type": "string"},
                 "generatedAt": {"type": "string"}
             },
-            "required": ["app","version", "generatedAt"]
+            "required": ["app","version"]
         },
         "content": {
             "type": "object",
