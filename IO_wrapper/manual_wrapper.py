@@ -31,7 +31,7 @@ class Schema_Paragraph():
     def __init__(self, file_text):
         self.text = file_text
 
-class Figure():
+class Schema_Figure():
     """
     Data structure for figures in manuals.
     """
@@ -39,7 +39,7 @@ class Figure():
         self.pages = page_span
         self.value = figure_code
 
-class Table():
+class Schema_Table():
     """
     Data structure for the tables in manuals.
     """
@@ -54,7 +54,9 @@ def create_output(segmented_PDF: SegmentedPDF.SegPDF, file_name, schema_path, ou
     """
     output_sections = []
     for section in segmented_PDF.Sections:
-        output_sections.append(visit_subsections(section))
+        visited_section = visit_subsections(section)
+        if visited_section is not None: # Do not add the section if it is "null/none"
+            output_sections.append(visited_section)
 
     export_able_object = Schema_Manual(segmented_PDF.PDFtitle, "Grundfos A/S", "", output_sections)
 
@@ -82,5 +84,8 @@ def visit_subsections(root: SegmentedPDF.Section):
             else:
                 page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
             schema_section.append(Schema_Section(section.Title, page, paragraph, visit_subsections(section)))
-        return schema_section
+        if len(schema_section) == 0: #Remove empty lists
+            return None
+        else:
+            return schema_section
     return None

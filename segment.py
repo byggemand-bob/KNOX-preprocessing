@@ -59,14 +59,13 @@ def segment_document(file: str, args):
         for table in page.TableCoordinates:
             IgnoreCoords.AddCoordinates(page.image_number, table)
 
-    TextAnal = TextAnalyser(os.path.join(args.input, current_PDF.file_name), IgnoreCoords)
-    TextAnal.__Test__()
-    PDF = TextAnal.SegmentText()
+    TextAnalyzer = TextAnalyser(os.path.join(args.input, current_PDF.file_name), IgnoreCoords)
+    analyzed_text = TextAnalyzer.SegmentText()
 
     #Create output
     schema_path = "/schema/manuals_v1.1.schema.json"
     output_path = "/"
-    wrapper.create_output(PDF, current_PDF.file_name, schema_path, output_path)
+    wrapper.create_output(analyzed_text, current_PDF.file_name, schema_path, output_path)
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """
