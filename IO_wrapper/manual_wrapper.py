@@ -61,7 +61,7 @@ def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
     # Generate
     handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at= str(datetime.datetime.now()), version="1.1.0"), schema_path)
     dirname = os.path.dirname(__file__) #Change if the output is args-controlled
-    filename = os.path.join(dirname, str("segmented_PDF.PDFtitle" + "_output.json")) #Rename when we know what the location is
+    filename = os.path.join(dirname, str(segmented_PDF.PDFtitle + "_output.json")) #Rename when we know what the location is
     
     # Serialize object to json
     with open(filename, 'w', encoding='utf-16') as outfile:
