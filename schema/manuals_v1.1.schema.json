@@ -4,7 +4,7 @@
     "properties": {
         "type": {"type": "string"},
         "shcemaLocation": {"type": "string"},
-        "schemaVersion": {"type": "string"},
+        "schemaVersion": {"default": "v1.1"},
         "generator": {
             "type": "object",
             "properties": {
@@ -12,7 +12,7 @@
                 "version": {"type": "string"},
                 "generatedAt": {"type": "string"}
             },
-            "required": ["app","version"]
+            "required": ["app","version", "generatedAt"]
         },
         "content": {
             "type": "object",
@@ -26,7 +26,9 @@
                 "publisher": {"type": "string"},
                 "publishedAt": {"type": "string"},
                 "title": {"type": "string"},
-                "sections": {"$ref": "#/definitions/sections"}
+                "sections": {"$ref": "#/definitions/section"},
+                "figures": {"$ref": "#/definitions/figure"},
+                "tables": {"$ref": "#/definitions/table"}
             },
             "required": ["sections","title","publisher"]
         },
@@ -36,7 +38,7 @@
                 "page": { "type": "string"},
                 "header": { "type": "string"},
                 "paragraphs":{"$ref": "#/definitions/paragraph"},
-                "sections": {"$ref": "#/definitions/sections"}
+                "sections": {"$ref": "#/definitions/section"}
             },
             "required": ["paragraphs","page"]
         },
@@ -47,6 +49,22 @@
                 "text": {"type": "string"}
             },
             "required": ["text", "page"]
+        },
+        "table":{
+            "type":"object",
+            "properties": {
+                "page": {"type": "string"},
+                "value": {"type": "string"}
+            },
+            "required": ["page", "value"]
+        },
+        "figure":{
+            "type":"object",
+            "properties": {
+                "page": {"type": "string"},
+                "value": {"type": "string"}
+            },
+            "required": ["page", "value"]        
         }
     }
 }
