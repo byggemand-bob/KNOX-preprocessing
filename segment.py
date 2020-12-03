@@ -66,7 +66,7 @@ def segment_document(file: str, args):
     #Create output
     schema_path = "/schema/manuals_v1.1.schema.json"
     output_path = "/"
-    wrapper.create_output(PDF, schema_path , output_path)
+    wrapper.create_output(PDF, current_PDF.file_name, schema_path, output_path)
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """

@@ -48,20 +48,21 @@ class Table():
         self.value = table_code
 
 
-def create_output(segmented_PDF: SegmentedPDF.SegPDF, schema_path, output_path):
+def create_output(segmented_PDF: SegmentedPDF.SegPDF, file_name, schema_path, output_path):
     """
     Creates the output to JSON using knox-source-data-io module: https://git.its.aau.dk/Knox/source-data-io
     """
     output_sections = []
     for section in segmented_PDF.Sections:
-        output_sections.append(visit_subsections(section))  
+        output_sections.append(visit_subsections(section))
 
     export_able_object = Schema_Manual(segmented_PDF.PDFtitle, "Grundfos A/S", "", output_sections)
 
     # Generate
     handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at= str(datetime.datetime.now()), version="1.1.0"), schema_path)
     dirname = os.path.dirname(__file__) #Change if the output is args-controlled
-    filename = os.path.join(dirname, str(segmented_PDF.PDFtitle + "_output.json")) #Rename when we know what the location is
+    output_name = str(file_name + "_output.json")
+    filename = os.path.join(dirname, output_name) #Rename when we know what the location is
     
     # Serialize object to json
     with open(filename, 'w', encoding='utf-16') as outfile:
@@ -76,7 +77,10 @@ def visit_subsections(root: SegmentedPDF.Section):
     if root.Sections is not None:
         for section in root.Sections:
             paragraph = Schema_Paragraph(section.Text)
-            page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
+            if (section.StartingPage == section.EndingPage):
+                page = str(section.StartingPage)
+            else:
+                page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
             schema_section.append(Schema_Section(section.Title, page, paragraph, visit_subsections(section)))
         return schema_section
     return None
