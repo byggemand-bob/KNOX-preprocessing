@@ -82,5 +82,8 @@ def visit_subsections(root: SegmentedPDF.Section):
             else:
                 page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
             schema_section.append(Schema_Section(section.Title, page, paragraph, visit_subsections(section)))
-        return schema_section
+        if len(schema_section) == 0: 
+            return None
+        else: 
+            return schema_section
     return None
