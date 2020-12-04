@@ -38,7 +38,7 @@ class ImageSegment:
     """
     Describes an imagesegment found on a page.
     """
-    byte_value = None
+    value = None
     coordinates: Coordinates = None
     page_number: int
     def __init__(self, coordinates):
@@ -49,7 +49,7 @@ class TableSegment:
     """
     Describes a tablesegment found on a page.
     """
-    byte_value = None
+    value = None
     coordinates: Coordinates = None
     page_number: int
     def __init__(self, coordinates: Coordinates):
@@ -72,10 +72,8 @@ class Page:
         self.text_sections.extend(page.text_sections)
         self.images.extend(page.images)
         self.tables.extend(page.tables)
-
-        self.tables.extend(page.tables)
     
-    def add_from_page_manuel(self, text_sections, images, tables):
+    def add_from_lists(self, text_sections, images, tables):
         """
         Adds the content of a page to this page.
         """

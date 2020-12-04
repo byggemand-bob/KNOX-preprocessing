@@ -1,5 +1,4 @@
 import os
-import shutil
 import argparse
 import copy
 import cv2
@@ -7,10 +6,10 @@ import concurrent.futures as cf
 import IO_handler
 from TextAnalyser import TextAnalyser
 from SegmentedPDF import SegPDF
-import The_good_little_miner_that_could as miner
+import miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
-import utils.extract_area as extractArea
+import utils.extract_area as extract_area
 import datastructure.models as datastructures
 from IgnoreCoordinates import IgnoreCoordinates
 import IO_wrapper.manual_wrapper as wrapper
@@ -19,28 +18,15 @@ def segment_documents(args: str, min_score: float):
     """
     Does document segmentation of a pdf file and produces a json file with the information found.
     """
-    # pages = []
-    # tmp_dir = os.path.join(os.getcwd(), "tmp", os.path.basename(input_path).replace(".pdf", ""))
-    # os.makedirs(tmp_dir)
-    # pdf2png.convert(input_path, tmp_dir)
-
-    # for filename in os.listdir(tmp_dir):
-    #     if filename.endswith(".png"):
-    #         mi_page = infer_page(os.path.join(tmp_dir, filename))
-
-    #     else:
-    #         continue
-
-    #shutil.rmtree(tmp_dir)
     IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
+    pdf2png.convert_dir_to_files(args.input, os.path.join(args.output, 'images'))
 
     for file in os.listdir(args.input):
         if file.endswith('.pdf'):
             segment_document(file, args)
 
 def segment_document(file: str, args):
-    the_final_pages = []
+    pages = []
     IgnoreCoords = IgnoreCoordinates()
     current_PDF = miner.PDF_file(file, args)
     for page in current_PDF.pages:
@@ -48,10 +34,15 @@ def segment_document(file: str, args):
         miner.Flip_Y_Coordinates(page)
         miner.LookThroughLineLists(page, args)
         miner.Check_Text_Objects(page)
+
+        image_path = os.path.join(os.getcwd(), 'out', 'images', page.image_name)
         page1 = miner.make_page(page)
-        page2 = infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
-        print(str(page1.page_number) + ' vs ' + str(page2.page_number))
-        the_final_pages.append(merge_pages(page1, page2))
+        page2 = infer_page(image_path)
+        result_page = merge_pages(page1, page2)
+        produce_data_from_coords(result_page, image_path)
+        pages.append()
+
+       
         for image in page.LTImageList:
             IgnoreCoords.AddCoordinates(page.image_number, image)
         for figure in page.LTRectList:
@@ -94,11 +85,7 @@ def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
             else:
                 continue
 
-            # image = cv2.imread(image_path)
-            # extractArea.extract_area_from_matrix(image, image_path.split(".png")[0] + label + str(idx) + ".png", area)
-
     return page_data
-
 
 def convert2coords(image, area: list) -> datastructures.Coordinates:
     """
@@ -107,7 +94,6 @@ def convert2coords(image, area: list) -> datastructures.Coordinates:
     rat = image.shape[0] / 1300
     return datastructures.Coordinates(int(area[0] * rat), int(area[1] * rat),
                                       int(area[2] * rat), int(area[3] * rat))
-
 
 def merge_pages(page1: datastructures.Page, page2: datastructures.Page) -> datastructures.Page:
     """
@@ -129,7 +115,6 @@ def merge_pages(page1: datastructures.Page, page2: datastructures.Page) -> datas
     result.add_from_page(page1_cpy)
     result.add_from_page(page2_cpy)
     return result
-
 
 def remove_duplicates(list1: list, list2: list):
     """
@@ -154,31 +139,21 @@ def remove_duplicates(list1: list, list2: list):
                 list1.remove(object1)
                 break
 
+def produce_data_from_coords(page, image_path):
+    """
+    Produces matrixes that represent seperate images for all tables and figures on the page.
+    """
+    image = cv2.imread(image_path)
+    for table in page.tables:
+        table.value = extract_area.extract_matrix_from_matrix(image, table.coordinates)
+    for figure in page.images:
+        figure.value = extract_area.extract_matrix_from_matrix(image, figure.coordinates)
+
 if __name__ == "__main__":
-    # page1 = datastructures.Page(1)
-    # page1.tables.append(datastructures.TableSegment(datastructures.Coordinates(0,0,100,100)))
-    # page2 = datastructures.Page(1)
-    # page2.tables.append(datastructures.TableSegment(datastructures.Coordinates(25,25,75,75)))
-
-    # print(len(page1.tables))
-    # for table in page1.tables:
-    #     print(table.coordinates.to_string())
-
-    # print(len(page2.tables))
-    # for table in page2.tables:
-    #     print(table.coordinates.to_string())
-
-    # page3 = merge_pages(page1, page2)
-
-    # print(len(page3.tables))
-    # for table in page3.tables:
-    #     print(table.coordinates.to_string())
-    # exit()
-    # Arguments
     argparser = argparse.ArgumentParser(description="WIP")
     argparser.add_argument("-i", "--input", action="store", default=os.path.join(os.getcwd(), 'src'), help="Path to input folder")
     argparser.add_argument("-o", "--output", action="store", default=os.path.join(os.getcwd(), 'out'), help="Path to output folder")
-    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.")
+    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.") #NOTE: What does this mean?
     args = argparser.parse_args()
 
     segment_documents(args, 0.7)

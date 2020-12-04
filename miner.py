@@ -511,7 +511,7 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description="WIP")
     argparser.add_argument("-i", "--input", action="store", default=os.path.join(os.getcwd(), 'src'), help="Path to input folder")
     argparser.add_argument("-o", "--output", action="store", default=os.path.join(os.getcwd(), 'out'), help="Path to output folder")
-    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.")
+    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.") #NOTE: What does this mean?
     args = argparser.parse_args()
 
     main(args)
