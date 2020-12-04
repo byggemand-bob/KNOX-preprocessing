@@ -4,7 +4,7 @@
     "properties": {
         "type": {"type": "string"},
         "shcemaLocation": {"type": "string"},
-        "schemaVersion": {"default": "v1.1"},
+        "schemaVersion": {"default": "v1.2"},
         "generator": {
             "type": "object",
             "properties": {
@@ -45,10 +45,25 @@
         "paragraph" :{
             "type": "object",
             "properties": {
-                "page": {"type": "string"},
                 "text": {"type": "string"}
             },
-            "required": ["text", "page"]
+            "required": ["text"]
+        },
+        "table":{
+            "type":"object",
+            "properties": {
+                "page": {"type": "string"},
+                "value": {"type": "string"}
+            },
+            "required": ["page", "value"]
+        },
+        "figure":{
+            "type":"object",
+            "properties": {
+                "page": {"type": "string"},
+                "value": {"type": "string"}
+            },
+            "required": ["page", "value"]        
         }
     }
 }
