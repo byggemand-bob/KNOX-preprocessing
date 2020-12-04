@@ -8,7 +8,7 @@ import time
 import shutil
 import segment
 import IO_handler
-from datastructure.models import Coordinates
+from datastructure.models import Coordinates, Text_Line_Coordinates
 import datastructure.models as datastructures
 import utils.pdf2png as pdf2png
 import concurrent.futures as cf
@@ -174,7 +174,7 @@ def SearchPage(page, args):
                 if isinstance(obj, LTTextLine):
                     index = index + 1
                     x0, y0, x1, y1 = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]
-                    newLTTextBox = Coordinates(x0, y0, x1, y1)
+                    newLTTextBox = Text_Line_Coordinates(x0, y0, x1, y1, LTTextLine)
                     page.LTTextLineList.append(newLTTextBox)
 
     print("There were " + str(index) + " objects on this page")
@@ -183,6 +183,12 @@ def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
     result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.TableSegment))
     return result
+    """
+    result.add_from_page_manuel([], 
+                                convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList).extend(convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.ImageSegment)), datastructures.ImageSegment), 
+                                convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+    
+    """
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []

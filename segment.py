@@ -11,7 +11,6 @@ import classification.infer as mi
 import utils.pdf2png as pdf2png
 import utils.extract_area as extract_area
 import datastructure.models as datastructures
-from IgnoreCoordinates import IgnoreCoordinates
 import IO_wrapper.manual_wrapper as wrapper
 
 def segment_documents(args: str, min_score: float):
@@ -27,6 +26,7 @@ def segment_documents(args: str, min_score: float):
 
 def segment_document(file: str, args):
     pages = []
+    text_pages = []
     IgnoreCoords = IgnoreCoordinates()
     current_PDF = miner.PDF_file(file, args)
     for page in current_PDF.pages:
@@ -50,7 +50,9 @@ def segment_document(file: str, args):
         for table in page.TableCoordinates:
             IgnoreCoords.AddCoordinates(page.image_number, table)
 
-    TextAnalyzer = TextAnalyser(os.path.join(args.input, current_PDF.file_name), IgnoreCoords)
+        pages.append([element.text_Line_Element for element in page.LTTextLineList])
+
+    TextAnalyzer = TextAnalyser(pages)
     analyzed_text = TextAnalyzer.SegmentText()
 
     #Create output

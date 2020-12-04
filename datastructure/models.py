@@ -24,6 +24,11 @@ class Coordinates:
         """
         return abs(self.x0 - self.x1) * abs(self.y0 - self.y1)
 
+class Text_Line_Coordinates(Coordinates):
+    def __init__(self, x0: float, y0 : float, x1: float, y1: float, element):
+        super().__init__(x0, y0, x1, y1)
+        self.text_Line_Element = element
+
 class TextSegment:
     """
     Describes a textsegment found on a page.

@@ -3,25 +3,9 @@ import IgnoreCoordinates
 import CoordinatesCalculator
 
 class LineStreamer():
-    def __init__(self, Layouts, ignoreCoords: IgnoreCoordinates.IgnoreCoordinates):
+    def __init__(self, text_Line_List):
         self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
-        self.Pages = []
-        Lines = []
-
-        x = 0
-
-        for Layout in Layouts:
-            PageIgnoreCoords = ignoreCoords.PageCoordinates(x)
-            for TextBox in Layout:
-                if isinstance(TextBox, LTTextBox):
-                    if self.CoordsCalc.IsObjectWithinCoordinateList(TextBox, PageIgnoreCoords):
-                        continue
-                    for Line in TextBox:
-                        if isinstance(Line, LTTextLine):
-                            Lines.append(Line)
-            self.Pages.append(Lines)
-            Lines = []
-            x += 1
+        self.Pages = text_Line_List
 
         self.CurrentPage = self.Pages[0]
         self.CurrentPageNum = 0
