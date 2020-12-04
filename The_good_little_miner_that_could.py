@@ -181,10 +181,14 @@ def SearchPage(page, args):
     
 def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
+    result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.TableSegment))
+    return result
+    """
     result.add_from_page_manuel([], 
                                 convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList).extend(convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.ImageSegment)), datastructures.ImageSegment), 
                                 convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
-    return result
+    
+    """
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []

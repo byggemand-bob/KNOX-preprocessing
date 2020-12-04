@@ -3,7 +3,7 @@ import IgnoreCoordinates
 import CoordinatesCalculator
 
 class LineStreamer():
-    def __init__(self, text_Line_List, ignoreCoords: IgnoreCoordinates.IgnoreCoordinates):
+    def __init__(self, text_Line_List):
         self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
         self.Pages = text_Line_List
 
