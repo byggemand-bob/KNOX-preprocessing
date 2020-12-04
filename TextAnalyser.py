@@ -20,11 +20,9 @@ class TextAnalyser:
     __CurrentTextFontSize__ = None
     __FollowingLine__ = None
     
-    def __init__(self, PDFpath, _IgnoreCoordinates: IgnoreCoordinates.IgnoreCoordinates):
-        self.PDFpath = PDFpath
+    def __init__(self, text_Line_List, _IgnoreCoordinates: IgnoreCoordinates.IgnoreCoordinates):
         self.IgnoreCoords = _IgnoreCoordinates
         self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
-        LayoutExt = PDFminerLayoutExtractor.LayoutExtractor(PDFpath)
         self.LineStreamer = PDFminerLineStreamer.LineStreamer(LayoutExt.AllLayouts(), self.IgnoreCoords)
 
     def __Test2__(self):
