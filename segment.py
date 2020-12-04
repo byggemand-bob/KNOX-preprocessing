@@ -33,13 +33,16 @@ def segment_documents(args: str, min_score: float):
 
     #shutil.rmtree(tmp_dir)
     IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
+    pdf2png.convert_dir_to_files(args.input, os.path.join(args.output, 'images'))
 
     for file in os.listdir(args.input):
         if file.endswith('.pdf'):
             segment_document(file, args)
 
 def segment_document(file: str, args):
+    """
+    
+    """
     the_final_pages = []
     IgnoreCoords = IgnoreCoordinates()
     current_PDF = miner.PDF_file(file, args)
