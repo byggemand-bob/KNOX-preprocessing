@@ -25,7 +25,6 @@ pip install -r requirements.txt
 
 Use the following steps to install the IO library.
 
-## Using
 First add the custom index url to your pip.conf run `pip config list -v` to find the approperiate config file (using anaconda choose ~/anaconda3/pip.conf). Insert the following:
 
 ```
