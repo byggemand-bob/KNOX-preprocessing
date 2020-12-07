@@ -1,12 +1,15 @@
+"""
+This module provides functionality to segment pdf documents.
+"""
+
 import os
 import shutil
 import argparse
 import copy
 import cv2
-import concurrent.futures as cf
 import IO_handler
 from TextAnalyser import TextAnalyser
-from SegmentedPDF import SegPDF
+import data_acquisition.grundfos_downloader as downloader
 import miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
@@ -20,7 +23,7 @@ def segment_documents(args: str):
     """
     tmp_folder = os.path.join(args.output, "tmp")
     IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.convert_dir_to_files(args.input, os.path.join(tmp_folder, 'images'))
+    pdf2png.multi_convert_dir_to_files(args.input, os.path.join(tmp_folder, 'images'))
 
     for file in os.listdir(args.input):
         if file.endswith('.pdf'):
@@ -30,6 +33,9 @@ def segment_documents(args: str):
         shutil.rmtree(tmp_folder)
 
 def segment_document(file: str, args):
+    """
+    Segments a pdf document
+    """
     schema_path = args.schema
     output_path = os.path.join(os.getcwd(), args.output, os.path.basename(file).replace(".pdf", ""))
     os.mkdir(output_path)
@@ -55,7 +61,7 @@ def segment_document(file: str, args):
             result_page = merge_pages(mined_page, infered_page)
         else:
             result_page = mined_page
-        
+
         produce_data_from_coords(result_page, image_path, output_path)
         pages.append(result_page)
 
@@ -79,7 +85,7 @@ def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     for pred in prediction:
         for idx, mask in enumerate(pred['masks']):
             label = mi.CATEGORIES2LABELS[pred["labels"][idx].item()]
-            
+
             if pred['scores'][idx].item() < min_score:
                 continue
             area = convert2coords(image, list(map(int, pred["boxes"][idx].tolist())))
@@ -155,8 +161,7 @@ def produce_data_from_coords(page, image_path, output_path):
     """
     image = cv2.imread(image_path)
     for table_number in range(len(page.tables)):
-        #print(page.tables[table_number].coordinates.to_string())
-        try:
+        try: #TODO: Finish try-excepts
             page.tables[table_number].path = os.path.join(output_path, "tables", os.path.basename(image_path).replace(".png", "_table" + str(table_number) + ".png"))
             extract_area.extract_area_from_matrix(image, page.tables[table_number].path, page.tables[table_number].coordinates)
         except:
@@ -170,14 +175,18 @@ def produce_data_from_coords(page, image_path, output_path):
 
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description="WIP")
-    argparser.add_argument("input", type=str, action="store", metavar="INPUT", help="Path to input folder")
-    argparser.add_argument("output",type=str, action="store", metavar="OUTPUT", help="Path to output folder")
+    argparser = argparse.ArgumentParser(description="Segments pdf documents.")
+    argparser.add_argument("input", type=str, action="store", metavar="INPUT", help="Path to input folder.")
+    argparser.add_argument("output",type=str, action="store", metavar="OUTPUT", help="Path to output folder.")
     argparser.add_argument("-a", "--accuracy", type=float, default=0.7, metavar="A", help="Minimum threshold for the prediction accuracy. Value between 0 to 1.")
-    argparser.add_argument("-m", "--machine", action="store_true", help="Enable machine intelligence crossreferencing.") #NOTE: Could be merges with accuracy arg
+    argparser.add_argument("-m", "--machine", action="store_true", help="Enable machine intelligence crossreferencing.") #NOTE: Could be merged with accuracy arg
     argparser.add_argument("-t", "--temporary", action="store_true", default=False, help="Keep temporary files")
-    argparser.add_argument("-c", "--clean", action="store_true", default=False, help="Delete everything in output folder.")
+    argparser.add_argument("-c", "--clean", action="store_true", default=False, help="Clear output folder before running.")
     argparser.add_argument("-s", "--schema", type=str, action="store", default="/schema/manuals_v1.1.schema.json", help="Path to json schema.")
-    args = argparser.parse_args()
+    argparser.add_argument("-d", "--download", action="store_true", default=False, help="Downloads Grundfos data to input folder.")
+    argv = argparser.parse_args()
 
-    segment_documents(args)
+    if argv.download is True:
+        downloader.download_data(argv.input)
+
+    segment_documents(argv)

@@ -21,16 +21,20 @@ def convert_to_file(file: str, out_dir: str):
     mat = fitz.Matrix(ZOOM, ZOOM)
 
     # Open image and get page count
-    doc = fitz.open(file)
-    number_of_pages = doc.pageCount
+    try:
+        doc = fitz.open(file)
+        number_of_pages = doc.pageCount
+    
+        # Convert each page to an image
+        for page_number in range(number_of_pages):
+            page = doc.loadPage(page_number)
+            pix = page.getPixmap(matrix=mat)
+            output_name = os.path.basename(file).replace(".pdf", "") + "_page" + str(page_number + 1) + ".png"
+            pix.writePNG(os.path.join(out_dir, output_name))
 
-    # Convert each page to an image
-    for page_number in range(number_of_pages):
-        page = doc.loadPage(page_number)
-        pix = page.getPixmap(matrix=mat)
-        output_name = os.path.basename(file).replace(".pdf", "") + "_page" + str(page_number + 1) + ".png"
-        pix.writePNG(os.path.join(out_dir, output_name))
-
+    except:
+        pass
+    
     if VERBOSE is True:
         print("  Converted " + file)
 
