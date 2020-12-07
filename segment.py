@@ -3,6 +3,7 @@ import shutil
 import argparse
 import copy
 import cv2
+import time
 import concurrent.futures as cf
 import IO_handler
 from TextAnalyser import TextAnalyser
@@ -30,23 +31,28 @@ def segment_documents(args: str):
         shutil.rmtree(tmp_folder)
 
 def segment_document(file: str, args):
+    print("testing file " + str(os.path.basename(file)))
+    start = time.perf_counter()
     schema_path = args.schema
     output_path = os.path.join(os.getcwd(), args.output, os.path.basename(file).replace(".pdf", ""))
     os.mkdir(output_path)
-    textline_pages = []
-    pages = []
 
     #Create output folders
     os.mkdir(os.path.join(output_path, "tables"))
     os.mkdir(os.path.join(output_path, "images"))
+    stop = time.perf_counter()
+    print(f"Created dirs in {stop - start:0.4f} seconds")    
 
+    start = time.perf_counter()
+    textline_pages = []
+    pages = []
     current_pdf = miner.PDF_file(file, args)
     for page in current_pdf.pages:
         miner.SearchPage(page, args)
         miner.Flip_Y_Coordinates(page)
         miner.LookThroughLineLists(page, args)
         miner.Check_Text_Objects(page)
-
+        
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
         mined_page = miner.make_page(page)
 
@@ -60,12 +66,23 @@ def segment_document(file: str, args):
         pages.append(result_page)
 
         textline_pages.append([element.text_Line_Element for element in page.LTTextLineList])
+    stop = time.perf_counter()
+    print(f"Segmented pages in {stop - start:0.4f} seconds")    
 
+
+    start = time.perf_counter()
     text_analyser = TextAnalyser(textline_pages)
     analyzed_text = text_analyser.SegmentText()
+    stop = time.perf_counter()
+    print(f"Segmented text in {stop - start:0.4f} seconds")    
 
+    start = time.perf_counter()
     #Create output
     wrapper.create_output(analyzed_text, pages, current_pdf.file_name, schema_path, output_path)
+    stop = time.perf_counter()
+    print(f"Created output in {stop - start:0.4f} seconds")    
+    print("-------------------------------------------------------------------")
+
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
     """
