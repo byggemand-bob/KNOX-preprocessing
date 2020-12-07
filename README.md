@@ -21,7 +21,7 @@ Install dependencies
 ```
 pip install -r requirements.txt
 ```
-# Source Data IO
+## Source Data IO
 
 Use the following steps to install the IO library.
 
@@ -53,3 +53,17 @@ It can then be loaded into the current project by running the command:
 ```
 pip install -r requirements.txt
 ```
+
+# Run the segmentation
+Locate the root folder in your linux terminal and input the following command:
+```
+python segment.py -c INPUT OUTPUT
+```
+Use INPUT and OUTPUT arguments as folders. 
+ 
+ 
+You can see argument flags using the following command: 
+```
+python segment.py --help
+```
+
