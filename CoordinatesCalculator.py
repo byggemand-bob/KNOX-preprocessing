@@ -6,11 +6,11 @@ class CoordinatesCalculator:
     # (x0,y0) is the lowest left corner, and (x1,y1) is the upper right
     # X coordinates are, distance from left edge, and y coordinates are distance from bottom edge
     def CreateCoordinates(self, x0, y0, x1, y1):
-        """converts varibles  x0, y0, x1, y1 into Coordinates class"""
+        """Converts varibles  x0, y0, x1, y1 into Coordinates class"""
         return Coordinates(x0, y0, x1, y1)
 
     def ConvertObjectToCoordinates(self, Object: pdfminer.layout.LTComponent):
-        """converts PDFminer object into a Coordinate class"""
+        """Converts PDFminer object into a Coordinate class"""
         return Coordinates(Object.x0, Object.y0, Object.x1, Object.y1)
 
     def CompareVerticalDist(self, x, y):

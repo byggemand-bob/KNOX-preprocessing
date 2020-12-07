@@ -17,10 +17,10 @@ from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTText, LTChar, LTF
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
 
-FIGURES = 'figures'
-IMAGES = 'images'
-ANNOTATED = 'images_annotated'
-LINES = 'line_cords'
+FIGURES = os.path.join("tmp", "figures")
+IMAGES = os.path.join("tmp", "images")
+ANNOTATED = os.path.join("tmp", "images_annotated")
+LINES = os.path.join("tmp", "line_cords")
 
 #mat = fitz.Matrix(zoom, zoom)
 start_time = time.time()
@@ -77,7 +77,7 @@ def main(args):
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
-def doshit_single(file, args):
+def doshit_single(file, args): #TODO: FIX
     the_final_pages = []
     pageNum = 0
     current_PDF = PDF_file(file, args)
@@ -91,7 +91,7 @@ def doshit_single(file, args):
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
         the_final_pages.append(segment.merge_pages(page1, page2))
 
-def doshit(file, args): 
+def doshit(file, args): #TODO: FIX
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
@@ -174,29 +174,34 @@ def SearchPage(page, args):
                 if isinstance(obj, LTTextLine):
                     index = index + 1
                     x0, y0, x1, y1 = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]
-                    newLTTextBox = Text_Line_Coordinates(x0, y0, x1, y1, LTTextLine)
+                    newLTTextBox = Text_Line_Coordinates(x0, y0, x1, y1, obj)
                     page.LTTextLineList.append(newLTTextBox)
-
-    print("There were " + str(index) + " objects on this page")
     
 def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
-    result.add_from_page_manuel([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.TableSegment))
-    return result
-    """
-    result.add_from_page_manuel([], 
-                                convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList).extend(convert_to_datastructure(convert_to_pixel_height(page, page.LTRectList), datastructures.ImageSegment)), datastructures.ImageSegment), 
-                                convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+    #result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+    #return result
     
-    """
+    #result.add_from_lists([], 
+    #    convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList.extend(page.LTRectList)), datastructures.ImageSegment), 
+    #    convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+    
+    # Works now : -Mette
+    # Dette virker ikke:       image_and_rectangle_list = page.LTImageList.extend(page.LTRectList)
+    image_and_rectangle_list = page.LTImageList
+    image_and_rectangle_list.extend(page.LTRectList)
+    result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, image_and_rectangle_list), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+
+    return result
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []
-    for element in object_list:
-        result_elements.append(datastructures.Coordinates(page.actualWidthModifier * element.x0,
-                                                          page.actualHeightModifier * element.y0,
-                                                          page.actualWidthModifier * element.x1,
-                                                          page.actualHeightModifier * element.y1))
+    if object_list is not None:
+        for element in object_list:
+            result_elements.append(datastructures.Coordinates(page.actualWidthModifier * element.x0,
+                                                            page.actualHeightModifier * element.y1,
+                                                            page.actualWidthModifier * element.x1,
+                                                            page.actualHeightModifier * element.y0))
     
     return result_elements
     
@@ -417,7 +422,9 @@ def LookThroughLTRectLineList(page, args):
 
     #find retangle coordinates for each grouping of table lines:
     for dicelement in Table_Dictionary.values():
-        page.TableCoordinates.append(ReturnRetangleCoordinatesForTable(dicelement))
+        coords = ReturnRetangleCoordinatesForTable(dicelement)
+        if coords.x0 != 0 and coords.y0 != 0 and coords.x1 != 0 and coords.y1 != 0: 
+            page.TableCoordinates.append(coords)
 
 def On_Segment(Line_element, dictionary):
     offset = 1 #I made this up, but it works

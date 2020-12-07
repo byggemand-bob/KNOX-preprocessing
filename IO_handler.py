@@ -6,24 +6,24 @@ import time
 
 start_time = time.time()
 
-def folder_prep(output:str = "out", clean:bool=False):
-    # raise IOError in case an output already excists in the selected directory and a clean run is not selected
-    if os.path.exists(output) and clean is False:
-        raise IOError('The selected location already excists(run with --clean to remove content)')
-    # in case an output already excists in the selected directory and a clean run is selected, delete the directory
-    elif(os.path.exists(output) and clean is True):
+def folder_prep(output:str = "tmp", clean:bool = False):
+    tmp_folder = os.path.join(output, "tmp")
+    if clean is True:
         shutil.rmtree(output)
+        os.mkdir(output)
+    # raise IOError in case an output already excists in the selected directory and a clean run is not selected
+    elif os.path.exists(tmp_folder):
+        shutil.rmtree(tmp_folder)
     # make new directories and print time
-    mkdirs(output)
-    print("Creating folders finished --- %s seconds ---" % (time.time() - start_time))
+    mkdirs(tmp_folder)
 
-def mkdirs(output):
+def mkdirs(temporary_folder: str):
     # Makes the output directory with sub-folders
-    os.mkdir(output)
-    os.mkdir(os.path.join(output, 'images'))
-    os.mkdir(os.path.join(output, 'images_annotated'))
-    os.mkdir(os.path.join(output, 'figures'))
-    os.mkdir(os.path.join(output, 'line_cords'))
+    os.mkdir(temporary_folder)
+    os.mkdir(os.path.join(temporary_folder, 'images'))
+    os.mkdir(os.path.join(temporary_folder, 'images_annotated'))
+    os.mkdir(os.path.join(temporary_folder, 'figures'))
+    os.mkdir(os.path.join(temporary_folder, 'line_cords'))
 
 def initialize():
     # Arguments
@@ -33,7 +33,7 @@ def initialize():
     argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.")
     args = argparser.parse_args()
 
-    folder_prep(args.output, args.clean)
+    folder_prep(args.output)
 
 def get_file_extension(stream_first_4_bytes):
     # Gets the hex bytecode for the first 4 hexadecimals of the 

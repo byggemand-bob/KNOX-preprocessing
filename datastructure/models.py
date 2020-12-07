@@ -43,7 +43,7 @@ class ImageSegment:
     """
     Describes an imagesegment found on a page.
     """
-    value = None
+    path = None
     coordinates: Coordinates = None
     page_number: int
     def __init__(self, coordinates):
@@ -54,7 +54,7 @@ class TableSegment:
     """
     Describes a tablesegment found on a page.
     """
-    value = None
+    path = None
     coordinates: Coordinates = None
     page_number: int
     def __init__(self, coordinates: Coordinates):
