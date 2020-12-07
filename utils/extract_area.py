@@ -42,4 +42,4 @@ if __name__ == "__main__":
     argv = parser.parse_args()
 
     roi = Coordinates(argv.x1, argv.y1, argv.x2, argv.y2)
-    area_from_file(argv.input, argv.output, roi)
+    extract_area_from_file(argv.input, argv.output, roi)
