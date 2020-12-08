@@ -29,7 +29,7 @@ First add the custom index url to your pip.conf run `pip config list -v` to find
 
 ```
 [global]
-extra-index-url = https://repos.libdom.net/
+extra-index-url = https://repos.knox.cs.aau.dk/
 ```
 
 ### Install via pip
