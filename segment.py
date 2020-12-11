@@ -10,13 +10,13 @@ import cv2
 import time
 import concurrent.futures as cf
 import IO_handler
-from TextAnalyser import TextAnalyser
+from text_analyzer.text_analyzer import TextAnalyser
 import data_acquisition.grundfos_downloader as downloader
 import miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
 import utils.extract_area as extract_area
-import datastructure.models as datastructures
+import datastructure.datastructure as datastructures
 import IO_wrapper.manual_wrapper as wrapper
 
 def segment_documents(args: str):
@@ -63,8 +63,8 @@ def segment_document(file: str, args):
     current_pdf = miner.PDF_file(file, args)
     for page in current_pdf.pages:
         miner.search_page(page, args)
-        miner.Flip_Y_Coordinates(page)
-        miner.look_through_line_lists(page, args)
+        miner.flip_y_coordinates(page)
+        miner.look_through_LTRectLine_list(page, args)
         miner.check_text_objects(page)
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
         mined_page = miner.make_page(page)
@@ -81,7 +81,7 @@ def segment_document(file: str, args):
 
 
     text_analyser = TextAnalyser(textline_pages)
-    analyzed_text = text_analyser.SegmentText()
+    analyzed_text = text_analyser.segment_text()
 
     #Create output
     wrapper.create_output(analyzed_text, pages, current_pdf.file_name, schema_path, output_path)

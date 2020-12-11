@@ -3,7 +3,7 @@ import PDFminerLayoutExtractor
 import PDFminerLineStreamer
 import CoordinatesCalculator
 import IgnoreCoordinates
-from datastructure.models import Coordinates
+from datastructure.datastructure import Coordinates
 import SegmentedPDF
 import re
 import sys
@@ -24,15 +24,15 @@ class TextAnalyser:
         self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
         self.LineStreamer = PDFminerLineStreamer.LineStreamer(text_Line_List)
 
-    def __Test2__(self):
+    def __test2__(self):
         Page = self.LineStreamer.AllLinesFromPage(8)
 
         print("coords (%f , %f),(%f , %f).    text: %s" %(Page[1].x0, Page[1].y0, Page[1].x1, Page[1].y1, Page[1].get_text()[:-1]))
         print("coords (%f , %f),(%f , %f).    text: %s" %(Page[0].x0, Page[0].y0, Page[0].x1, Page[0].y1, Page[0].get_text()[:-1]))
         print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]))
-        print(self.FontSize(Page[0]) * -2.5)
+        print(self.font_size(Page[0]) * -2.5)
         print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]) < 0)
-        print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]) < self.FontSize(Page[0]) * -2.5)
+        print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]) < self.font_size(Page[0]) * -2.5)
         print()
         x = 0
 
@@ -42,7 +42,7 @@ class TextAnalyser:
             if not line.x0 < line.x1 and not line.y0 < line.y1:
                 print("ERROR!!!")
 
-        Columns = self.__FindColumns__(Page)
+        Columns = self.find_columns(Page)
 
         for Column in Columns:
             print("\n#######################################################\nIn coords: (%f,%f),(%f,%f):" % (Column[0].x0, Column[0].y0, Column[0].x1, Column[0].y1))
@@ -53,15 +53,15 @@ class TextAnalyser:
         print("####################### Sorted Columns #################################")
         print("########################################################################")
 
-        Columns = self.__SortColumns__(Columns)
+        Columns = self.sort_columns(Columns)
 
         for Column in Columns:
             print("\n#######################################################\nIn coords: (%f,%f),(%f,%f):" % (Column[0].x0, Column[0].y0, Column[0].x1, Column[0].y1))
             for line in Column[1]:
                 print(line.get_text()[:-1])
 
-    def __Test__(self):
-        PDF = self.SegmentText()
+    def __test__(self):
+        PDF = self.segment_text()
 
         print("TITLE:")
         print(PDF.PDFtitle)
@@ -71,9 +71,9 @@ class TextAnalyser:
         print()
 
         for section in PDF.Sections:
-            self.TestPrintSections(section, 0)
+            self.test_print_sections(section, 0)
 
-    def TestPrintSections(self, Section, section_level):
+    def test_print_sections(self, Section, section_level):
 
         subnum = ""
 
@@ -99,28 +99,28 @@ class TextAnalyser:
                 print("###################################### ERROR #################################################")
                 print("###################################### ERROR #################################################\n")
                 break
-            self.TestPrintSections(SubSection, section_level + 1)
+            self.test_print_sections(SubSection, section_level + 1)
 
-    def SegmentText(self):
+    def segment_text(self):
         PDF = SegmentedPDF.SegPDF()
         SortedPages = []
 
         # Iterates though all pages, sorting all text into columns and ordering them
         for x in range(0, self.LineStreamer.NumOfPages):
             Page = self.LineStreamer.AllLinesFromPage(x)
-            PageColumns = self.__FindColumns__(Page)
-            PageColumns = self.__SortColumns__(PageColumns)
+            PageColumns = self.find_columns(Page)
+            PageColumns = self.sort_columns(PageColumns)
             SortedPages.append(PageColumns)
 
-        PDF.PDFtitle, PDF.PDFSubTitle = self.__FindTitle__(SortedPages[0])
+        PDF.PDFtitle, PDF.PDFSubTitle = self.find_title(SortedPages[0])
 
-        self.__PrepareSectioning__(SortedPages)
+        self.prepare_sectioning(SortedPages)
 
-        self.__FindSections__(PDF)
+        self.find_sections(PDF)
 
         return PDF
 
-    def __PrepareSectioning__(self, SortedPages):
+    def prepare_sectioning(self, SortedPages):
         """does nessesary setup for section segmentation to begin"""
         self.__Pages__ = []
         for page in SortedPages:
@@ -129,35 +129,35 @@ class TextAnalyser:
         self.__NextLineIndex__ = 0
         self.__PageIndex__ = 0
 
-        self.__BlockTextFontSizes__ = self.__FindBlockTextFontSizes__(self.__Pages__[0])
-        self.__NextLine__()
+        self.__BlockTextFontSizes__ = self.find_block_text_font_sizes(self.__Pages__[0])
+        self.next_line()
 
-    def __FindSections__(self, PDF):
-        self.__NextText__()
+    def find_sections(self, PDF):
+        self.next_text()
 
         while self.__CurrentText__ != None:
             NewSection = SegmentedPDF.Section()
 
-            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
+            if self.is_simular_size_in_list(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
                 NewSection.Text = self.__CurrentText__
                 NewSection.StartingPage = self.__CurrentTextStart__
                 NewSection.EndingPage = self.__CurrentTextEnd__
                 PDF.Sections.append(NewSection)
-                self.__NextText__()
+                self.next_text()
             else:
                 NewSection.Title = self.__CurrentText__
                 TitleFontSize = self.__CurrentTextFontSize__
                 NewSection.StartingPage = self.__CurrentTextStart__
-                self.__NextText__()
-                self.__FindSubSections__(NewSection, TitleFontSize)
+                self.next_text()
+                self.find_subsections(NewSection, TitleFontSize)
                 PDF.Sections.append(NewSection)
 
-    def __FindSubSections__(self, CurrentSection, TitleFontSize):
+    def find_subsections(self, CurrentSection, TitleFontSize):
         while self.__CurrentText__ != None:
-            if self.__IsSimularSizeInList__(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
+            if self.is_simular_size_in_list(self.__CurrentTextFontSize__, self.__BlockTextFontSizes__, 0.01):
                 CurrentSection.Text += self.__CurrentText__
-                self.__NextText__()
-            elif self.__IsSimularFontSize__(self.__CurrentTextFontSize__, TitleFontSize, 0.01) or TitleFontSize < self.__CurrentTextFontSize__:
+                self.next_text()
+            elif self.is_simular_font_size(self.__CurrentTextFontSize__, TitleFontSize, 0.01) or TitleFontSize < self.__CurrentTextFontSize__:
                 CurrentSection.EndingPage = self.__CurrentTextEnd__
                 return
             else:
@@ -165,24 +165,24 @@ class TextAnalyser:
                 NewSection.Title = self.__CurrentText__
                 NewSectionTitleFontSize = self.__CurrentTextFontSize__
                 NewSection.StartingPage = self.__CurrentTextStart__
-                self.__NextText__()
-                self.__FindSubSections__(NewSection, NewSectionTitleFontSize)
+                self.next_text()
+                self.find_subsections(NewSection, NewSectionTitleFontSize)
                 CurrentSection.Sections.append(NewSection)
         
         CurrentSection.EndingPage = self.__CurrentTextEnd__
 
-    def __NextText__(self):
+    def next_text(self):
         """Groups all sequential text of simular fontsize, saving results in self.__CurrentText__ and self.__CurrentTextFontSize__"""
         if self.__FollowingLine__ != None:
-            self.__CurrentTextFontSize__ = self.FontSize(self.__FollowingLine__)
+            self.__CurrentTextFontSize__ = self.font_size(self.__FollowingLine__)
             self.__CurrentText__ = self.__FollowingLine__.get_text()
             self.__CurrentTextStart__ = self.__PageIndex__ + 1
 
-            self.__NextLine__()
+            self.next_line()
 
-            while self.__IsSimularFontSize__(self.__CurrentTextFontSize__, self.FontSize(self.__FollowingLine__), 0.01):
+            while self.is_simular_font_size(self.__CurrentTextFontSize__, self.font_size(self.__FollowingLine__), 0.01):
                 self.__CurrentText__ += self.__FollowingLine__.get_text()
-                self.__NextLine__()
+                self.next_line()
         else:
             self.__CurrentText__ = None
             self.__CurrentTextFontSize__ = None
@@ -192,7 +192,7 @@ class TextAnalyser:
         else:
             self.__CurrentTextEnd__ = len(self.__Pages__)
 
-    def __NextLine__(self):
+    def next_line(self):
         """Find the next line and saves it in self.__FollowingLine__"""
         if self.__NextLineIndex__ < len(self.__Pages__[self.__PageIndex__]):
             self.__FollowingLine__ = self.__Pages__[self.__PageIndex__][self.__NextLineIndex__]
@@ -201,13 +201,13 @@ class TextAnalyser:
         else:
             self.__PageIndex__ += 1
             if self.__PageIndex__ < len(self.__Pages__):
-                self.__BlockTextFontSizes__ = self.__FindBlockTextFontSizes__(self.__Pages__[self.__PageIndex__])
+                self.__BlockTextFontSizes__ = self.find_block_text_font_sizes(self.__Pages__[self.__PageIndex__])
                 self.__NextLineIndex__ = 0
-                self.__NextLine__()
+                self.next_line()
             else:
                 self.__FollowingLine__ = None
 
-    def __FindTitle__(self, FirstPage):
+    def find_title(self, FirstPage):
         try:
 
             LargestFontSize = 0
@@ -215,7 +215,7 @@ class TextAnalyser:
             #locates the line with largest fontsize on first page
             for ColumnIndex in range(0, len(FirstPage)):
                 for LineIndex in range(0, len(FirstPage[ColumnIndex])):
-                    LineFontSize = self.FontSize(FirstPage[ColumnIndex][LineIndex])
+                    LineFontSize = self.font_size(FirstPage[ColumnIndex][LineIndex])
                     if LineFontSize > LargestFontSize:
                         LargestFontSize = LineFontSize
                         LargestColumnIndex = ColumnIndex
@@ -228,7 +228,7 @@ class TextAnalyser:
             # adding anything of simular size as pdftitle
             # adding subsequent lines as Subtitle
             for line in FirstPage[LargestColumnIndex]:
-                if self.__IsSimularFontSize__(self.FontSize(line), LargestFontSize, 0.3):
+                if self.is_simular_font_size(self.font_size(line), LargestFontSize, 0.3):
                     PDFTitle += line.get_text()
                 elif PDFTitle != "":
                     PDFSubTitle += line.get_text()
@@ -239,11 +239,11 @@ class TextAnalyser:
         except:
             return "", ""      
 
-    def __FindColumns__(self, Page):
+    def find_columns(self, Page):
         # Initializes first column
         AllColumns = []
         if len(Page) != 0:
-            LastFontSize = self.FontSize(Page[0])
+            LastFontSize = self.font_size(Page[0])
             ColumnLines = [Page[0]]
             ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[0])
 
@@ -261,10 +261,10 @@ class TextAnalyser:
                     AllColumns.append(Column)
                     ColumnLines = [Page[x]]
                     ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[x])
-                    LastFontSize = self.FontSize(Page[x])
+                    LastFontSize = self.font_size(Page[x])
                 else:
                     # Add to column
-                    LastFontSize = self.FontSize(Page[x])
+                    LastFontSize = self.font_size(Page[x])
                     ColumnLines.append(Page[x])
                     ColumnCoords.y0 = Page[x].y0
                     if Page[x].x0 < ColumnCoords.x0:
@@ -283,7 +283,7 @@ class TextAnalyser:
         else:
             return []
 
-    def __SortColumns__(self, Columns):
+    def sort_columns(self, Columns):
         SortedColumns = []
 
         while len(Columns) != 0:
@@ -305,19 +305,19 @@ class TextAnalyser:
 
         return [Columns[1] for Columns in SortedColumns]
 
-    def __IsSimularSizeInList__(self, FontSize, FontSizeList, EM):
+    def is_simular_size_in_list(self, FontSize, FontSizeList, EM):
         """Returns true if there is a fontsize in FontSizeList, of simularsize to FontSize given the error margine(%) EM"""
         for _FontSize in FontSizeList:
-            if self.__IsSimularFontSize__(FontSize, _FontSize, EM):
+            if self.is_simular_font_size(FontSize, _FontSize, EM):
                 return True
 
-    def __FindBlockTextFontSizes__(self, Page):
+    def find_block_text_font_sizes(self, Page):
         NumOflines = 0
         FontList = [(0,0)]
 
         for line in Page:
             NumOflines += 1
-            self.__AddToFontList__(FontList, self.FontSize(line))
+            self.add_to_font_list(FontList, self.font_size(line))
 
         del FontList[0]
         LowerBound = NumOflines / 4
@@ -325,18 +325,18 @@ class TextAnalyser:
         #filters out the fontsizes which didn't appear more then the LowerBound, and only keeps the fontsize
         return [Font[0] for Font in FontList if Font[1] > LowerBound]
 
-    def __AddToFontList__(self, FontApperances, FontSize):
+    def add_to_font_list(self, FontApperances, FontSize):
         for Apperance in FontApperances:
             if FontSize == Apperance[0]:
                 Apperance[1] += 1
                 return
         FontApperances.append([FontSize, 1])
 
-    def __IsSimularFontSize__(self, FontA, FontB, EM):
+    def is_simular_font_size(self, FontA, FontB, EM):
         #EM = Error Margine in procent (e.g. 0.1 = 10% error margine)
         return FontA / FontB < 1 + EM and FontA / FontB > 1 - EM
 
-    def FontSize(self, Textline):
+    def font_size(self, Textline):
         """returns Font size of textline"""
         if Textline == None:
             # isn't 0 to avoid needing to do additional checks, to avoid devide by zero errors in later calculations

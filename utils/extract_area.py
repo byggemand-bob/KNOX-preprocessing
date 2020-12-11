@@ -5,7 +5,7 @@ and either write it to a png file or return it as a matrix.
 
 import argparse
 import cv2
-from datastructure.models import Coordinates
+from datastructure.datastructure import Coordinates
 
 OFFSET = 0 # How many extra pixels outside the ROI should be included
 

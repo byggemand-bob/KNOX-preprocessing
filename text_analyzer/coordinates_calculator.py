@@ -1,19 +1,19 @@
 import pdfminer.layout
-from datastructure.models import Coordinates
+from datastructure.datastructure import Coordinates
 
 class CoordinatesCalculator:
     # All CoordinatesCalculator's calculations assumes the coordinates is set up like in PDFMiner i.e.
     # (x0,y0) is the lowest left corner, and (x1,y1) is the upper right
     # X coordinates are, distance from left edge, and y coordinates are distance from bottom edge
-    def CreateCoordinates(self, x0, y0, x1, y1):
+    def create_coordinates(self, x0, y0, x1, y1):
         """Converts varibles  x0, y0, x1, y1 into Coordinates class"""
         return Coordinates(x0, y0, x1, y1)
 
-    def ConvertObjectToCoordinates(self, Object: pdfminer.layout.LTComponent):
+    def convert_object_to_coordinates(self, Object: pdfminer.layout.LTComponent):
         """Converts PDFminer object into a Coordinate class"""
         return Coordinates(Object.x0, Object.y0, Object.x1, Object.y1)
 
-    def CompareVerticalDist(self, x, y):
+    def compare_vertical_dist(self, x, y):
         """Returns the vertical distance of x compared to y, positive num means x is above y, negative meaning below, and 0 meas x and y overlap vertically"""
         #test if x bottom-most coordinate is higher then y topmost coordiante.
         if x.y0 > y.y1:
@@ -24,7 +24,7 @@ class CoordinatesCalculator:
         else:
             return 0
 
-    def CompareHorizontalDist(self, x, y):
+    def compare_horizontal_dist(self, x, y):
         """Returns the horizontal distance of x compared to y, positive num means x is further right y, negative meaning further left, and 0 meas x and y overlap horizontally"""
         #test if x leftmost coordinate is further right then y rightmost coordinate
         if x.x0 > y.x1:
@@ -35,15 +35,15 @@ class CoordinatesCalculator:
         else:
             return 0
 
-    def IsObjectWithinCoordinateList(self, ObjectsCoordinates, CoordinateList):
+    def is_object_within_coordinate_list(self, ObjectsCoordinates, CoordinateList):
         """returns true if object is within or partially within any of the coordiantes in CoordinateList"""
         for Coords in CoordinateList:
-            if self.IsObjectWithinCoordinates(ObjectsCoordinates, Coords) >= 0:
+            if self.is_object_within_coordinates(ObjectsCoordinates, Coords) >= 0:
                 return True
 
         return False
 
-    def IsObjectWithinCoordinates(self, ObjectsCoords, TestCoords):
+    def is_object_within_coordinates(self, ObjectsCoords, TestCoords):
         """Will return 1 if the ObjectCoords is within TestCoords, -1 if not, and 0 if partially"""
         #assuming that the most likely senario is that the object isn't within the coordinates
         #this is what we'll check for first

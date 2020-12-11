@@ -6,7 +6,7 @@ class SegPDF:
     def __init__(self):
         self.Sections = []
 
-    def AddSection(self, section):
+    def add_section(self, section):
         self.Sections.append(section)
 
 class Section:
@@ -18,6 +18,6 @@ class Section:
     def __init__(self):
         self.Sections = []
 
-    def AddSection(self, section):
+    def add_section(self, section):
         self.Sections.append(section)
 
