@@ -23,6 +23,12 @@ class Coordinates:
         Calculates and returns the size of the area spanning the coordinates.
         """
         return abs(self.x0 - self.x1) * abs(self.y0 - self.y1)
+    
+    def is_negative(self):
+        if (self.x0 < 0) or (self.x1 < 0) or (self.y0 < 0) or (self.y1 < 0):
+            return True
+        else:
+            return False
 
 class Text_Line_Coordinates(Coordinates):
     def __init__(self, x0: float, y0 : float, x1: float, y1: float, element):

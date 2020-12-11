@@ -32,8 +32,8 @@ def convert_to_file(file: str, out_dir: str):
             output_name = os.path.basename(file).replace(".pdf", "") + "_page" + str(page_number + 1) + ".png"
             pix.writePNG(os.path.join(out_dir, output_name))
 
-    except:
-        pass
+    except Exception as e:
+        print(e)
     
     if VERBOSE is True:
         print("  Converted " + file)
@@ -50,7 +50,7 @@ def convert_dir_to_files(in_dir: str, out_dir: str):
 def multi_convert_dir_to_files(in_dir: str, out_dir: str):
     """
     Convert a directory of PDF files and writes each page as a PNG image in the 'out_dir' directory.
-    Multi-threaded.
+    Multi-processed.
     """
 
     # Go through every file in the input dir and append to list.

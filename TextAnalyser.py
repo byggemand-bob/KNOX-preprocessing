@@ -208,32 +208,36 @@ class TextAnalyser:
                 self.__FollowingLine__ = None
 
     def __FindTitle__(self, FirstPage):
-        LargestFontSize = 0
+        try:
 
-        #locates the line with largest fontsize on first page
-        for ColumnIndex in range(0, len(FirstPage)):
-            for LineIndex in range(0, len(FirstPage[ColumnIndex])):
-                LineFontSize = self.FontSize(FirstPage[ColumnIndex][LineIndex])
-                if LineFontSize > LargestFontSize:
-                    LargestFontSize = LineFontSize
-                    LargestColumnIndex = ColumnIndex
-                    LargestLineIndex = LineIndex
+            LargestFontSize = 0
 
-        PDFTitle = ""
-        PDFSubTitle = ""
-        
-        # iterates over the column with the largest fontsize line
-        # adding anything of simular size as pdftitle
-        # adding subsequent lines as Subtitle
-        for line in FirstPage[LargestColumnIndex]:
-            if self.__IsSimularFontSize__(self.FontSize(line), LargestFontSize, 0.3):
-                PDFTitle += line.get_text()
-            elif PDFTitle != "":
-                PDFSubTitle += line.get_text()
+            #locates the line with largest fontsize on first page
+            for ColumnIndex in range(0, len(FirstPage)):
+                for LineIndex in range(0, len(FirstPage[ColumnIndex])):
+                    LineFontSize = self.FontSize(FirstPage[ColumnIndex][LineIndex])
+                    if LineFontSize > LargestFontSize:
+                        LargestFontSize = LineFontSize
+                        LargestColumnIndex = ColumnIndex
+                        LargestLineIndex = LineIndex
 
-        del FirstPage[LargestColumnIndex]
+            PDFTitle = ""
+            PDFSubTitle = ""
+            
+            # iterates over the column with the largest fontsize line
+            # adding anything of simular size as pdftitle
+            # adding subsequent lines as Subtitle
+            for line in FirstPage[LargestColumnIndex]:
+                if self.__IsSimularFontSize__(self.FontSize(line), LargestFontSize, 0.3):
+                    PDFTitle += line.get_text()
+                elif PDFTitle != "":
+                    PDFSubTitle += line.get_text()
 
-        return PDFTitle, PDFSubTitle        
+            del FirstPage[LargestColumnIndex]
+
+            return PDFTitle, PDFSubTitle  
+        except:
+            return "", ""      
 
     def __FindColumns__(self, Page):
         # Initializes first column

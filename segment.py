@@ -25,21 +25,30 @@ def segment_documents(args: str):
     """
     tmp_folder = os.path.join(args.output, "tmp")
     IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.multi_convert_dir_to_files(args.input, os.path.join(tmp_folder, 'images'))
+    pdf2png.multi_convert_dir_to_files(args.input, os.path.join(tmp_folder, 'images'))  
 
+    fail_counter = 0
     for file in os.listdir(args.input):
         if file.endswith('.pdf'):
-            segment_document(file, args)
+            try:
+                segment_document(file, args)
+            except Exception as ex:
+                #The file loaded was probably not a pdf and cant be segmented (with pdfminer)
+                fail_counter = fail_counter + 1
+                try:
+                    print(ex)
+                except:
+                    pass
 
     if args.temporary is False:
         shutil.rmtree(tmp_folder)
+    print("Total amount of failed PDF segmentations:" + str(fail_counter))
 
 def segment_document(file: str, args):
     """
     Segments a pdf document
     """
     print("testing file " + str(os.path.basename(file)))
-    start = time.perf_counter()
     
     schema_path = args.schema
     output_path = os.path.join(os.getcwd(), args.output, os.path.basename(file).replace(".pdf", ""))
@@ -48,19 +57,15 @@ def segment_document(file: str, args):
     #Create output folders
     os.mkdir(os.path.join(output_path, "tables"))
     os.mkdir(os.path.join(output_path, "images"))
-    stop = time.perf_counter()
-    print(f"Created dirs in {stop - start:0.4f} seconds")    
 
-    start = time.perf_counter()
     textline_pages = []
     pages = []
     current_pdf = miner.PDF_file(file, args)
     for page in current_pdf.pages:
-        miner.SearchPage(page, args)
+        miner.search_page(page, args)
         miner.Flip_Y_Coordinates(page)
-        miner.LookThroughLineLists(page, args)
-        miner.Check_Text_Objects(page)
-        
+        miner.look_through_line_lists(page, args)
+        miner.check_text_objects(page)
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
         mined_page = miner.make_page(page)
 
@@ -69,27 +74,17 @@ def segment_document(file: str, args):
             result_page = merge_pages(mined_page, infered_page)
         else:
             result_page = mined_page
-
         produce_data_from_coords(result_page, image_path, output_path)
         pages.append(result_page)
 
         textline_pages.append([element.text_Line_Element for element in page.LTTextLineList])
-    stop = time.perf_counter()
-    print(f"Segmented pages in {stop - start:0.4f} seconds")    
 
 
-    start = time.perf_counter()
     text_analyser = TextAnalyser(textline_pages)
     analyzed_text = text_analyser.SegmentText()
-    stop = time.perf_counter()
-    print(f"Segmented text in {stop - start:0.4f} seconds")    
 
-    start = time.perf_counter()
     #Create output
     wrapper.create_output(analyzed_text, pages, current_pdf.file_name, schema_path, output_path)
-    stop = time.perf_counter()
-    print(f"Created output in {stop - start:0.4f} seconds")    
-    print("-------------------------------------------------------------------")
 
 
 def infer_page(image_path: str, min_score: float = 0.7) -> datastructures.Page:
@@ -157,19 +152,20 @@ def remove_duplicates(list1: list, list2: list):
     """
     Removes elements that reside in other elements. These would be redundant if left in.
     """
+    threshold = 100 #Might be obsolete... :(
     for object1 in list1:
         for object2 in list2:
-            if (object2.coordinates.x0 >= object1.coordinates.x0 and
-                object2.coordinates.x1 <= object1.coordinates.x1 and
-                object2.coordinates.y0 >= object1.coordinates.y0 and
-                object2.coordinates.y1 <= object1.coordinates.y1):
+            if (object2.coordinates.x0 + threshold >= object1.coordinates.x0 and
+                object2.coordinates.x1 - threshold <= object1.coordinates.x1 and
+                object2.coordinates.y0 + threshold >= object1.coordinates.y0 and
+                object2.coordinates.y1 - threshold <= object1.coordinates.y1):
 
                 list2.remove(object2)
 
-            elif (object1.coordinates.x0 >= object2.coordinates.x0 and
-                object1.coordinates.x1 <= object2.coordinates.x1 and
-                object1.coordinates.y0 <= object2.coordinates.y0 and
-                object1.coordinates.y1 >= object2.coordinates.y1):
+            elif (object1.coordinates.x0 + threshold >= object2.coordinates.x0 and
+                object1.coordinates.x1 - threshold <= object2.coordinates.x1 and
+                object1.coordinates.y0 - threshold <= object2.coordinates.y0 and
+                object1.coordinates.y1 + threshold >= object2.coordinates.y1):
 
                 list1.remove(object1)
                 break
@@ -178,19 +174,22 @@ def produce_data_from_coords(page, image_path, output_path):
     """
     Produces matrixes that represent seperate images for all tables and figures on the page.
     """
+    area_treshold = 10000
     image = cv2.imread(image_path)
     for table_number in range(len(page.tables)):
-        try: #TODO: Finish try-excepts
-            page.tables[table_number].path = os.path.join(output_path, "tables", os.path.basename(image_path).replace(".png", "_table" + str(table_number) + ".png"))
-            extract_area.extract_area_from_matrix(image, page.tables[table_number].path, page.tables[table_number].coordinates)
-        except:
-            pass
+        if page.tables[table_number].coordinates.area() > area_treshold and ((page.tables[table_number].coordinates.is_negative() is False)):
+            try: #TODO: Finish try-excepts
+                page.tables[table_number].path = os.path.join(output_path, "tables", os.path.basename(image_path).replace(".png", "_table" + str(table_number) + ".png"))
+                extract_area.extract_area_from_matrix(image, page.tables[table_number].path, page.tables[table_number].coordinates)
+            except Exception as x:
+                print(x)
     for image_number in range(len(page.images)):
-        try:
-            page.images[image_number].path = os.path.join(output_path, "images",os.path.basename(image_path).replace(".png", "_image" + str(image_number) + ".png"))
-            extract_area.extract_area_from_matrix(image, page.images[image_number].path, page.images[image_number].coordinates)
-        except:
-            pass
+        if (page.images[image_number].coordinates.area() > area_treshold) and (page.images[image_number].coordinates.is_negative() is False):
+            try:
+                page.images[image_number].path = os.path.join(output_path, "images",os.path.basename(image_path).replace(".png", "_image" + str(image_number) + ".png"))
+                extract_area.extract_area_from_matrix(image, page.images[image_number].path, page.images[image_number].coordinates)
+            except Exception as x:
+                print(x)
 
 
 if __name__ == "__main__":

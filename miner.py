@@ -65,15 +65,6 @@ def main(args):
     for file in os.listdir(args.input):
         if file.endswith('.pdf'):
             doshit_single(file, args)
-    """ files = []
-    list_args = []
-    for file in os.listdir(args.input):
-        if file.endswith(".pdf"):
-            files.append(file)
-            list_args.append(args)
-
-    with cf.ProcessPoolExecutor() as executor:
-        executor.map(doshit, files, list_args) """
                
     print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
 
@@ -82,10 +73,10 @@ def doshit_single(file, args): #TODO: FIX
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
-        SearchPage(page, args)
+        search_page(page, args)
         Flip_Y_Coordinates(page)
-        LookThroughLineLists(page, args)
-        Check_Text_Objects(page)
+        look_through_line_lists(page, args)
+        check_text_objects(page)
         page1 = make_page(page)
         page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
         print(str(page1.page_number) + ' vs ' + str(page2.page_number))
@@ -95,11 +86,11 @@ def doshit(file, args): #TODO: FIX
     pageNum = 0
     current_PDF = PDF_file(file, args)
     for page in current_PDF.pages:
-        SearchPage(page, args)
+        search_page(page, args)
         Flip_Y_Coordinates(page)
-        LookThroughLineLists(page, args)
-        Check_Text_Objects(page)
-        PaintPNGs(page, args)
+        look_through_line_lists(page, args)
+        check_text_objects(page)
+        paint_pngs(page, args)
         print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
         pageNum = pageNum + 1
 
@@ -110,7 +101,7 @@ def init_file(args, fileName):
     device = PDFPageAggregator(rsrcmgr, laparams=laparams)
     return PDFPage.get_pages(fp), PDFPageInterpreter(rsrcmgr, device), device
 
-def SearchPage(page, args):
+def search_page(page, args):
     index = 1
     figureIndex = 1
     #find all images and figures first.
@@ -120,25 +111,27 @@ def SearchPage(page, args):
             figureIndex = figureIndex + 1
 
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-            newLTImage = Coordinates(x0, y0, x1, y1)
-            page.LTImageList.append(newLTImage)
-            SaveFigure(lobj, page, figureIndex, args)
+            if (x0 < page.PDFfile_width and x0 > 0 and x1 < page.PDFfile_width and x1 > 0) and (y0 < page.PDFfile_height and y0 > 0 and y1 < page.PDFfile_height and y1 > 0):
+                newLTImage = Coordinates(x0, y0, x1, y1)
+                page.LTImageList.append(newLTImage)
+                save_figure(lobj, page, figureIndex, args)
 
 
         if isinstance(lobj, LTRect):
             index = index + 1
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-            result = Check_If_Line(x0, y0, x1, y1) #check if the rectangle is a line instead of a rectangle.
-            if(result != 0): #it is a line
-                if(result == 1): #horizontal line
-                    newLTLine = Coordinates(x0, y0, x1, y0) 
-                    page.LTRectLineList.append(newLTLine)
-                elif(result == 2): #vertical line
-                    newLTLine = Coordinates(x0, y0, x0, y1) 
-                    page.LTRectLineList.append(newLTLine)
-            else:
-                newLTRect = Coordinates(x0, y0, x1, y1)
-                page.LTRectList.append(newLTRect)
+            if (x0 < page.PDFfile_width and x0 > 0 and x1 < page.PDFfile_width and x1 > 0) and (y0 < page.PDFfile_height and y0 > 0 and y1 < page.PDFfile_height and y1 > 0):
+                result = check_if_line(x0, y0, x1, y1) #check if the rectangle is a line instead of a rectangle.
+                if(result != 0): #it is a line
+                    if(result == 1): #horizontal line
+                        newLTLine = Coordinates(x0, y0, x1, y0) 
+                        page.LTRectLineList.append(newLTLine)
+                    elif(result == 2): #vertical line
+                        newLTLine = Coordinates(x0, y0, x0, y1) 
+                        page.LTRectLineList.append(newLTLine)
+                else:
+                    newLTRect = Coordinates(x0, y0, x1, y1)
+                    page.LTRectList.append(newLTRect)
 
 
         if isinstance(lobj, LTFigure):
@@ -148,9 +141,10 @@ def SearchPage(page, args):
                     figureIndex = figureIndex + 1
 
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
-                    newLTImage = Coordinates(x0, y0, x1, y1)
-                    page.LTImageList.append(newLTImage)
-                    SaveFigure(inner_obj, page, figureIndex, args)
+                    if (x0 < page.PDFfile_width and x0 > 0 and x1 < page.PDFfile_width and x1 > 0) and (y0 < page.PDFfile_height and y0 > 0 and y1 < page.PDFfile_height and y1 > 0):
+                        newLTImage = Coordinates(x0, y0, x1, y1)
+                        page.LTImageList.append(newLTImage)
+                        save_figure(inner_obj, page, figureIndex, args)
 
 
                 #find all lines and curves.
@@ -179,19 +173,9 @@ def SearchPage(page, args):
     
 def make_page(page: PDF_page):
     result = datastructures.Page(page.image_number)
-    #result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
-    #return result
-    
-    #result.add_from_lists([], 
-    #    convert_to_datastructure(convert_to_pixel_height(page, page.LTImageList.extend(page.LTRectList)), datastructures.ImageSegment), 
-    #    convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
-    
-    # Works now : -Mette
-    # Dette virker ikke:       image_and_rectangle_list = page.LTImageList.extend(page.LTRectList)
     image_and_rectangle_list = page.LTImageList
     image_and_rectangle_list.extend(page.LTRectList)
     result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, image_and_rectangle_list), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
-
     return result
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
@@ -202,7 +186,6 @@ def convert_to_pixel_height(page: PDF_page, object_list: list):
                                                             page.actualHeightModifier * element.y1,
                                                             page.actualWidthModifier * element.x1,
                                                             page.actualHeightModifier * element.y0))
-    
     return result_elements
     
 def convert_to_datastructure(object_list: list, desired_object: object):
@@ -212,7 +195,7 @@ def convert_to_datastructure(object_list: list, desired_object: object):
     	
     return result_obj_list
 
-def Check_If_Line(x0, y0, x1, y1):
+def check_if_line(x0, y0, x1, y1):
     x = abs(x1 - x0)
     y = abs(y1 - y0)
     threshold = 5
@@ -225,12 +208,12 @@ def Check_If_Line(x0, y0, x1, y1):
 
     return 0
 
-def SaveFigure(lobj, page, figureIndex, args):
+def save_figure(lobj, page, figureIndex, args):
     file_stream = lobj.stream.get_rawdata()
-    fileExtension = IO_handler.get_file_extension(file_stream[0:4])
+    file_extension = IO_handler.get_file_extension(file_stream[0:4])
 
-    if(fileExtension != None):
-        figureName = page.image_name.replace(".png", "") + str(figureIndex) + fileExtension
+    if(file_extension != None):
+        figureName = page.image_name.replace(".png", "") + str(figureIndex) + file_extension
 
         file_obj = open(os.path.join(os.path.join(args.output, FIGURES), figureName), 'wb')
         file_obj.write(lobj.stream.get_rawdata())
@@ -249,7 +232,7 @@ def Flip_Y_Coordinate(page, object_List):
         element.y0 = page.PDFfile_height - element.y0
         element.y1 = page.PDFfile_height - element.y1
 
-def PaintPNGs(page, args):
+def paint_pngs(page, args):
 
     thickness = -1
     lineThickness = 40
@@ -257,35 +240,35 @@ def PaintPNGs(page, args):
 
     #LTRect:
     colorPink = (127,255,0)
-    image = Paint(image, page, page.LTRectList, colorPink, thickness)    
+    image = paint(image, page, page.LTRectList, colorPink, thickness)    
 
     #LTImage:
     colorGreen = (0, 255, 0) #green - image
-    image = Paint(image, page, page.LTImageList, colorGreen, thickness)    
+    image = paint(image, page, page.LTImageList, colorGreen, thickness)    
 
     #LTCurve:
     colorBlue = (255, 0, 0) #blue - figure
-    image = Paint(image, page, page.LTCurveList, colorBlue, lineThickness)    
+    image = paint(image, page, page.LTCurveList, colorBlue, lineThickness)    
 
     #LTLines:
-    image = Paint(image, page, page.LTLineList, colorBlue, lineThickness)  
+    image = paint(image, page, page.LTLineList, colorBlue, lineThickness)  
     #LTRectlines:
     color_Light_Blue = (255,191,0)
-    image = Paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness) 
+    image = paint(image, page, page.LTRectLineList, color_Light_Blue, lineThickness) 
 
     #tables:
     colorRed = (0,0,255)
-    image = Paint(image, page, page.TableCoordinates, colorRed, thickness)      
+    image = paint(image, page, page.TableCoordinates, colorRed, thickness)      
 
     #LTTextlines:
     colorBlack = (0, 0, 0) #black - text
     #colorWhite = (255, 255, 255) #white
-    image = Paint(image, page, page.LTTextLineList, colorBlack, thickness)    
+    image = paint(image, page, page.LTTextLineList, colorBlack, thickness)    
     print(page.image_name)
 
     cv2.imwrite(os.path.join(args.output, ANNOTATED, page.image_name), image) #save picture
 
-def Paint(image, page, objectList, color, thickness):
+def paint(image, page, objectList, color, thickness):
     for element in objectList:
         start_point = (round(element.x0*page.actualWidthModifier), round(element.y0*page.actualHeightModifier))
         end_point = (round(element.x1* page.actualWidthModifier), round(element.y1*page.actualHeightModifier))
@@ -294,88 +277,11 @@ def Paint(image, page, objectList, color, thickness):
     
     return image
 
-def LookThroughLineLists(page, args):
-    # if(len(page.LTLineList) > 0):
-    #     LookThroughLTLineList(page, args)
-    # if(len(page.TableLines) > 0):
-    #     for element in page.TableLines:
-    #         page.LTRectLineList.append(element)
-    LookThroughLTRectLineList(page, args)
+def look_through_line_lists(page, args):
+    look_through_LTRectLine_list(page, args)
 
-# def LookThroughLTLineList(page, args):
-#     #Divide into dictionary where key is the elements height.
-#     Line_Dictionary = {}
-#     for LT_Line_element in page.LTLineList:
-#         if(round(LT_Line_element.y0) == round(LT_Line_element.y1)): #Only horizontal lines
-#             if(round(LT_Line_element.x1) - round(LT_Line_element.x0) > 10): #Only lines longer than 10 (points)
-#                 newHeightCoordinate = True
-#                 for dicelement in Line_Dictionary.values():
-#                     for Line_Dic_element in dicelement:
-#                         if(round(LT_Line_element.y0, 2) == round(Line_Dic_element.y0, 2)):
-#                             newHeightCoordinate = False
-#                             key = str(round(LT_Line_element.y0, 2))
-#                             if key in Line_Dictionary:
-#                                 Line_Dictionary[key].append(LT_Line_element) 
-#                             else:
-#                                 Line_Dictionary[key] = [LT_Line_element]
-#                             break
-#                     if(newHeightCoordinate == False):
-#                         break
-#                 if(newHeightCoordinate == True):
-#                     key = str(round(LT_Line_element.y0, 2))
-#                     Line_Dictionary[key] = [LT_Line_element]
-    
-#     #delete those elements in the dictionaries groupings which are not connected:
-#     dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
-#     new_Dictionary_Values_Lengh = 0
-#     while(True):
-#         Line_Dictionary = Clean_Up_Dictionary(Line_Dictionary)
-#         new_Dictionary_Values_Lengh = Count_Elements_In_Dictionary(Line_Dictionary)
-#         if(dictionary_Values_Lengh == new_Dictionary_Values_Lengh or new_Dictionary_Values_Lengh == 0):
-#             break
-#         else:
-#             dictionary_Values_Lengh = new_Dictionary_Values_Lengh
 
-#     #Prints dictionary info:
-#     # print("Dic lengh:" + str(len(Line_Dictionary)))
-#     # for LT_Line_element in Line_Dictionary.values():
-#     #     print(str(len(LT_Line_element)))
-
-#     # f = open(os.path.join(os.path.join(args.output, LINES), page.image_name.replace(".png", "")) + "-LTLines.txt", "w")
-#     # f.write(str(len(Line_Dictionary)) + "\n")
-#     # for dicelement in Line_Dictionary.values():
-#     #     for element in dicelement:
-#     #         f.write(element.To_String() + "\n")   
-#     # for element in page.LTLineList:
-#     #     f.write(element.To_String() + "\n")   
-#     #f.close()
-
-#     for dicelement in Line_Dictionary.values():
-#         for element in dicelement:
-#             page.TableLines.append(element)
-
-# def Clean_Up_Dictionary(dictionary):
-#     for key, value in dictionary.items():
-#         if(len(value) > 0):
-#             if(len(value) == 1):
-#                 dictionary[key].pop()
-#             else:
-#                 connected = False
-#                 for element in value:
-#                     for element2 in value:
-#                         if(round(element.x0, 2) == round(element2.x1, 2) or round(element.x1, 2) == round(element2.x0, 2)):
-#                             connected = True
-#                 if(connected == False):
-#                     dictionary[key].pop()
-#     return dictionary
-
-# def Count_Elements_In_Dictionary(dictionary):
-    # dictionary_Values_Lengh = 0
-    # for LT_Line_element in dictionary.values():
-    #     dictionary_Values_Lengh = dictionary_Values_Lengh + len(LT_Line_element)
-    # return dictionary_Values_Lengh
-
-def LookThroughLTRectLineList(page, args):
+def look_through_LTRectLine_list(page, args):
     Table_Dictionary = {}
     table_Index_key = 0
     line_list = page.LTRectLineList.copy()
@@ -386,7 +292,7 @@ def LookThroughLTRectLineList(page, args):
         if(something_was_changed == True):
             something_was_changed = False
             for LT_Line_element in line_list:
-                result = On_Segment(LT_Line_element, Table_Dictionary)
+                result = on_segment(LT_Line_element, Table_Dictionary)
                 if(result[0] == True):
                     key = result[1]
                     if key in Table_Dictionary:
@@ -402,31 +308,16 @@ def LookThroughLTRectLineList(page, args):
             else:
                 break
 
-    #Prints dictionary info, for testing purposes:
-    # print("Dic lengh:" + str(len(Table_Dictionary)))
-    # for LT_Line_element in Table_Dictionary.values():
-    #     print(str(len(LT_Line_element)))
-
-    #Write to file, also for testing purposes.
-    # f = open(os.path.join(os.path.join(args.output, LINES), page.image_name.replace(".png", "")) + "-LTLines.txt", "w")
-    # f.write(str(len(Table_Dictionary)) + "\n")
-    # for dicelement in Table_Dictionary.values():
-    #     for element in dicelement:
-    #         f.write(element.To_String() + "\n")   
-    # for element in line_list:
-    #     f.write(element.To_String() + "\n")    
-    #f.close()
-
     #Delete single elements in the dictionary:
-    Table_Dictionary = Remove_Single_Elements(Table_Dictionary)
+    Table_Dictionary = remove_single_elements(Table_Dictionary)
 
     #find retangle coordinates for each grouping of table lines:
     for dicelement in Table_Dictionary.values():
-        coords = ReturnRetangleCoordinatesForTable(dicelement)
+        coords = return_retangle_coordinates_for_table(dicelement)
         if coords.x0 != 0 and coords.y0 != 0 and coords.x1 != 0 and coords.y1 != 0: 
             page.TableCoordinates.append(coords)
 
-def On_Segment(Line_element, dictionary):
+def on_segment(Line_element, dictionary):
     offset = 1 #I made this up, but it works
     for key, value in dictionary.items():
         if(len(value) > 0):
@@ -439,14 +330,14 @@ def On_Segment(Line_element, dictionary):
                     return True, key
     return False, ""
 
-def Remove_Single_Elements(dictionary):
+def remove_single_elements(dictionary):
     dictionary_Copy = dictionary.copy()
     for key, value in dictionary_Copy.items():
         if(len(value) == 1):
             dictionary_Copy[key].pop()
     return dictionary_Copy
 
-def ReturnRetangleCoordinatesForTable(dicelement):
+def return_retangle_coordinates_for_table(dicelement):
     lower_left_x0 = 0
     lower_left_y0 = 0
     upper_right_x1 = 0
@@ -471,16 +362,16 @@ def ReturnRetangleCoordinatesForTable(dicelement):
     table_coordinate = Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
     return table_coordinate
 
-def Check_Text_Objects(page):
+def check_text_objects(page):
     if(len(page.LTTextLineList) > 0):
         if(len(page.LTImageList) > 0):
-            Remove_Text_Within(page, page.LTImageList)
+            remove_text_within(page, page.LTImageList)
         if(len(page.LTRectList) > 0):
-            Remove_Text_Within(page, page.LTRectList)
+            remove_text_within(page, page.LTRectList)
         if(len(page.TableCoordinates) > 0):
-            Remove_Text_Within(page, page.TableCoordinates)
+            remove_text_within(page, page.TableCoordinates)
 
-def Remove_Text_Within(page, object_List):
+def remove_text_within(page, object_List):
     text_Line_List = page.LTTextLineList.copy()
     for text_Element in text_Line_List:
         element_Found = False
