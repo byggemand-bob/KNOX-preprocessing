@@ -1,10 +1,9 @@
 from pdfminer.layout import LTTextBox, LTTextLine
-import IgnoreCoordinates
-import CoordinatesCalculator
+import coordinates_calculator
 
 class LineStreamer():
     def __init__(self, text_Line_List):
-        self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
+        self.CoordsCalc = coordinates_calculator.CoordinatesCalculator()
         self.Pages = text_Line_List
 
         self.CurrentPage = self.Pages[0]

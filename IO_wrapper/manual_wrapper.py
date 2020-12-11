@@ -5,7 +5,7 @@ More specifically it is preparing data for the actural wrapper used (https://git
 
 from knox_source_data_io.io_handler import *
 from knox_source_data_io.models.model import Model
-import datastructure as ds
+import datastructure.datastructure as ds
 import os
 import datetime
 import SegmentedPDF
@@ -56,7 +56,7 @@ class Schema_Table():
         self.value = table_value
 
 
-def create_output(segmented_pdf: SegmentedPDF.SegPDF, pages: ds.models.Page, file_name, schema_path, output_path):
+def create_output(segmented_pdf: SegmentedPDF.SegPDF, pages: ds.Page, file_name, schema_path, output_path):
     """
     Creates the output to JSON using knox-source-data-io module: https://git.its.aau.dk/Knox/source-data-io
     """

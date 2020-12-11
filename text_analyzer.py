@@ -1,8 +1,8 @@
 from pdfminer.layout import LTTextLine, LTTextLineHorizontal, LTTextLineVertical, LTChar
 import PDFminerLayoutExtractor
-import PDFminerLineStreamer
-import CoordinatesCalculator
-import IgnoreCoordinates
+import PDFminerLineStreamer as PDFminerLineStreamer
+import coordinates_calculator as CoordinatesCalculator
+import ignore_coordinates
 from datastructure.datastructure import Coordinates
 import SegmentedPDF
 import re
@@ -23,83 +23,6 @@ class TextAnalyser:
     def __init__(self, text_Line_List):
         self.CoordsCalc = CoordinatesCalculator.CoordinatesCalculator()
         self.LineStreamer = PDFminerLineStreamer.LineStreamer(text_Line_List)
-
-    def __test2__(self):
-        Page = self.LineStreamer.AllLinesFromPage(8)
-
-        print("coords (%f , %f),(%f , %f).    text: %s" %(Page[1].x0, Page[1].y0, Page[1].x1, Page[1].y1, Page[1].get_text()[:-1]))
-        print("coords (%f , %f),(%f , %f).    text: %s" %(Page[0].x0, Page[0].y0, Page[0].x1, Page[0].y1, Page[0].get_text()[:-1]))
-        print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]))
-        print(self.font_size(Page[0]) * -2.5)
-        print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]) < 0)
-        print(self.CoordsCalc.CompareHorizontalDist(Page[1], Page[0]) < self.font_size(Page[0]) * -2.5)
-        print()
-        x = 0
-
-        for line in Page:
-            print("line nr: %d    coords (%f , %f),(%f , %f).    text: %s" %(x, line.x0, line.y0, line.x1, line.y1, line.get_text()[:-1]))
-            x += 1
-            if not line.x0 < line.x1 and not line.y0 < line.y1:
-                print("ERROR!!!")
-
-        Columns = self.find_columns(Page)
-
-        for Column in Columns:
-            print("\n#######################################################\nIn coords: (%f,%f),(%f,%f):" % (Column[0].x0, Column[0].y0, Column[0].x1, Column[0].y1))
-            for line in Column[1]:
-                print(line.get_text()[:-1])
-
-        print("\n########################################################################")
-        print("####################### Sorted Columns #################################")
-        print("########################################################################")
-
-        Columns = self.sort_columns(Columns)
-
-        for Column in Columns:
-            print("\n#######################################################\nIn coords: (%f,%f),(%f,%f):" % (Column[0].x0, Column[0].y0, Column[0].x1, Column[0].y1))
-            for line in Column[1]:
-                print(line.get_text()[:-1])
-
-    def __test__(self):
-        PDF = self.segment_text()
-
-        print("TITLE:")
-        print(PDF.PDFtitle)
-        print()
-        print("SubTitle:")
-        print(PDF.PDFSubTitle)
-        print()
-
-        for section in PDF.Sections:
-            self.test_print_sections(section, 0)
-
-    def test_print_sections(self, Section, section_level):
-
-        subnum = ""
-
-        for x in range(0, section_level):
-            subnum += "SUB"
-
-        print(subnum + "-SECTION:")
-        if Section.Title == "":
-            print("TITLE: ~~~No Title~~~")
-        else:
-            print("TITLE: " + Section.Title)
-        print("SectionPage: " + str(Section.StartingPage) + ", " + str(Section.EndingPage))
-
-        print("Section Text:\n" + Section.Text)
-
-        for SubSection in Section.Sections:
-            if SubSection == Section:
-                print("\n###################################### ERROR #################################################")
-                print("###################################### ERROR #################################################")
-                print("###################################### ERROR #################################################")
-                print("           infinite loop subsection error. One of the section subsections is itself")
-                print("###################################### ERROR #################################################")
-                print("###################################### ERROR #################################################")
-                print("###################################### ERROR #################################################\n")
-                break
-            self.test_print_sections(SubSection, section_level + 1)
 
     def segment_text(self):
         PDF = SegmentedPDF.SegPDF()
@@ -245,12 +168,12 @@ class TextAnalyser:
         if len(Page) != 0:
             LastFontSize = self.font_size(Page[0])
             ColumnLines = [Page[0]]
-            ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[0])
+            ColumnCoords = self.CoordsCalc.convert_object_to_coordinates(Page[0])
 
             # test all lines on page after the first
             for x in range(1, len(Page)):
-                VertDist = self.CoordsCalc.CompareVerticalDist(Page[x], ColumnCoords)
-                HoriDist = self.CoordsCalc.CompareHorizontalDist(Page[x], ColumnCoords)
+                VertDist = self.CoordsCalc.compare_vertical_dist(Page[x], ColumnCoords)
+                HoriDist = self.CoordsCalc.compare_horizontal_dist(Page[x], ColumnCoords)
 
                 # test whether the new line is above the column coords
                 # or if its larger then 2.5 line gab, compared to lastline
@@ -260,7 +183,7 @@ class TextAnalyser:
                     Column = [ColumnCoords, ColumnLines]
                     AllColumns.append(Column)
                     ColumnLines = [Page[x]]
-                    ColumnCoords = self.CoordsCalc.ConvertObjectToCoordinates(Page[x])
+                    ColumnCoords = self.CoordsCalc.convert_object_to_coordinates(Page[x])
                     LastFontSize = self.font_size(Page[x])
                 else:
                     # Add to column
@@ -296,7 +219,7 @@ class TextAnalyser:
                     SelectedColumnCoords = Columns[x][0]
                     SelectedColumnIndex = x
                 # tests if the current column is futher up on the page then the selected
-                elif self.CoordsCalc.CompareVerticalDist(Columns[x][0], SelectedColumnCoords) > 0:
+                elif self.CoordsCalc.compare_vertical_dist(Columns[x][0], SelectedColumnCoords) > 0:
                     SelectedColumnCoords = Columns[x][0]
                     SelectedColumnIndex = x
 

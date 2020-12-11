@@ -250,7 +250,6 @@ def look_through_LTRectLine_list(page, args):
     something_was_changed = False
 
     while(True):
-        print("Number of lines left: " + str(len(line_list)))
         if(something_was_changed == True):
             something_was_changed = False
             for LT_Line_element in line_list:

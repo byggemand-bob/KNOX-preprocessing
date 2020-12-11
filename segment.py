@@ -10,7 +10,7 @@ import cv2
 import time
 import concurrent.futures as cf
 import IO_handler
-from text_analyzer.text_analyzer import TextAnalyser
+from text_analyzer import TextAnalyser
 import data_acquisition.grundfos_downloader as downloader
 import miner
 import classification.infer as mi
@@ -62,12 +62,12 @@ def segment_document(file: str, args):
     for page in current_pdf.pages:
         print(page.image_number)
         miner.search_page(page, args)
-        miner.Flip_Y_Coordinates(page)
+        miner.flip_y_coordinates(page)
 
         if (len(page.LTRectLineList) < 1000 ):
             #Only pages without a COLLOSAL amount of lines will be grouped. 
             #Otherwise the segmentation will take too long.
-            miner.look_through_line_lists(page, args)
+            miner.look_through_LTRectLine_list(page, args)
 
         miner.check_text_objects(page)
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
@@ -83,11 +83,9 @@ def segment_document(file: str, args):
 
         textline_pages.append([element.text_Line_Element for element in page.LTTextLineList])
 
-    print("before analyzer")
     text_analyser = TextAnalyser(textline_pages)
     analyzed_text = text_analyser.segment_text()
 
-    print("before wrapper")
     #Create output
     wrapper.create_output(analyzed_text, pages, current_pdf.file_name, schema_path, output_path)
 
