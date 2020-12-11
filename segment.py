@@ -48,8 +48,6 @@ def segment_document(file: str, args):
     """
     Segments a pdf document
     """
-    print("testing file " + str(os.path.basename(file)))
-    
     schema_path = args.schema
     output_path = os.path.join(os.getcwd(), args.output, os.path.basename(file).replace(".pdf", ""))
     os.mkdir(output_path)
@@ -62,9 +60,15 @@ def segment_document(file: str, args):
     pages = []
     current_pdf = miner.PDF_file(file, args)
     for page in current_pdf.pages:
+        print(page.image_number)
         miner.search_page(page, args)
         miner.Flip_Y_Coordinates(page)
-        miner.look_through_line_lists(page, args)
+
+        if (len(page.LTRectLineList) < 1000 ):
+            #Only pages without a COLLOSAL amount of lines will be grouped. 
+            #Otherwise the segmentation will take too long.
+            miner.look_through_line_lists(page, args)
+
         miner.check_text_objects(page)
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
         mined_page = miner.make_page(page)
@@ -79,10 +83,11 @@ def segment_document(file: str, args):
 
         textline_pages.append([element.text_Line_Element for element in page.LTTextLineList])
 
-
+    print("before analyzer")
     text_analyser = TextAnalyser(textline_pages)
     analyzed_text = text_analyser.SegmentText()
 
+    print("before wrapper")
     #Create output
     wrapper.create_output(analyzed_text, pages, current_pdf.file_name, schema_path, output_path)
 
