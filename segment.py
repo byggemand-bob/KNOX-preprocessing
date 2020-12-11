@@ -10,13 +10,13 @@ import cv2
 import time
 import concurrent.futures as cf
 import IO_handler
-from TextAnalyser import TextAnalyser
+from text_analyzer.text_analyzer import TextAnalyser
 import data_acquisition.grundfos_downloader as downloader
 import miner
 import classification.infer as mi
 import utils.pdf2png as pdf2png
 import utils.extract_area as extract_area
-import datastructure.models as datastructures
+import datastructure.datastructure as datastructures
 import IO_wrapper.manual_wrapper as wrapper
 
 def segment_documents(args: str):
@@ -85,7 +85,7 @@ def segment_document(file: str, args):
 
     print("before analyzer")
     text_analyser = TextAnalyser(textline_pages)
-    analyzed_text = text_analyser.SegmentText()
+    analyzed_text = text_analyser.segment_text()
 
     print("before wrapper")
     #Create output

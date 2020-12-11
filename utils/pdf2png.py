@@ -121,7 +121,6 @@ if __name__ == "__main__":
     if not os.path.isdir(argv.output):
         print("Output directory must be a correct existing path.")
 
-
     if os.path.isfile(argv.input):
         if argv.input.endswith(".pdf"):
             print("Converting " + argv.input)

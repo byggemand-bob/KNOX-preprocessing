@@ -1,6 +1,5 @@
 import os
 import sys
-import fitz
 import cv2
 import argparse
 import numpy as ny
@@ -8,8 +7,7 @@ import time
 import shutil
 import segment
 import IO_handler
-from datastructure.models import Coordinates, Text_Line_Coordinates
-import datastructure.models as datastructures
+import datastructure.datastructure as datastructure
 import utils.pdf2png as pdf2png
 import concurrent.futures as cf
 from pdfminer.converter import PDFPageAggregator
@@ -22,7 +20,6 @@ IMAGES = os.path.join("tmp", "images")
 ANNOTATED = os.path.join("tmp", "images_annotated")
 LINES = os.path.join("tmp", "line_cords")
 
-#mat = fitz.Matrix(zoom, zoom)
 start_time = time.time()
 
 class PDF_file:
@@ -58,42 +55,6 @@ class PDF_page:
         self.actualHeightModifier = self.height/self.PDFfile_height
         self.actualWidthModifier = self.width/self.PDFfile_width
 
-def main(args):
-    IO_handler.folder_prep(args.output, args.clean)
-    pdf2png.convert_dir(args.input, os.path.join(args.output, 'images'))
-
-    for file in os.listdir(args.input):
-        if file.endswith('.pdf'):
-            doshit_single(file, args)
-               
-    print("Program finished at: --- %s seconds ---" % (time.time() - start_time))
-
-def doshit_single(file, args): #TODO: FIX
-    the_final_pages = []
-    pageNum = 0
-    current_PDF = PDF_file(file, args)
-    for page in current_PDF.pages:
-        search_page(page, args)
-        Flip_Y_Coordinates(page)
-        look_through_line_lists(page, args)
-        check_text_objects(page)
-        page1 = make_page(page)
-        page2 = segment.infer_page(os.path.join(os.getcwd(), 'out', 'images', page.image_name))
-        print(str(page1.page_number) + ' vs ' + str(page2.page_number))
-        the_final_pages.append(segment.merge_pages(page1, page2))
-
-def doshit(file, args): #TODO: FIX
-    pageNum = 0
-    current_PDF = PDF_file(file, args)
-    for page in current_PDF.pages:
-        search_page(page, args)
-        Flip_Y_Coordinates(page)
-        look_through_line_lists(page, args)
-        check_text_objects(page)
-        paint_pngs(page, args)
-        print("Finished page " + str(pageNum) + " at --- " + str(time.time() - start_time) + " seconds ---")
-        pageNum = pageNum + 1
-
 def init_file(args, fileName):
     fp = open(os.path.join(args.input, fileName), 'rb')
     rsrcmgr = PDFResourceManager()
@@ -112,7 +73,7 @@ def search_page(page, args):
 
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
             if (x0 < page.PDFfile_width and x0 > 0 and x1 < page.PDFfile_width and x1 > 0) and (y0 < page.PDFfile_height and y0 > 0 and y1 < page.PDFfile_height and y1 > 0):
-                newLTImage = Coordinates(x0, y0, x1, y1)
+                newLTImage = datastructure.Coordinates(x0, y0, x1, y1)
                 page.LTImageList.append(newLTImage)
                 save_figure(lobj, page, figureIndex, args)
 
@@ -124,13 +85,13 @@ def search_page(page, args):
                 result = check_if_line(x0, y0, x1, y1) #check if the rectangle is a line instead of a rectangle.
                 if(result != 0): #it is a line
                     if(result == 1): #horizontal line
-                        newLTLine = Coordinates(x0, y0, x1, y0) 
+                        newLTLine = datastructure.Coordinates(x0, y0, x1, y0) 
                         page.LTRectLineList.append(newLTLine)
                     elif(result == 2): #vertical line
-                        newLTLine = Coordinates(x0, y0, x0, y1) 
+                        newLTLine = datastructure.Coordinates(x0, y0, x0, y1) 
                         page.LTRectLineList.append(newLTLine)
                 else:
-                    newLTRect = Coordinates(x0, y0, x1, y1)
+                    newLTRect = datastructure.Coordinates(x0, y0, x1, y1)
                     page.LTRectList.append(newLTRect)
 
 
@@ -142,7 +103,7 @@ def search_page(page, args):
 
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
                     if (x0 < page.PDFfile_width and x0 > 0 and x1 < page.PDFfile_width and x1 > 0) and (y0 < page.PDFfile_height and y0 > 0 and y1 < page.PDFfile_height and y1 > 0):
-                        newLTImage = Coordinates(x0, y0, x1, y1)
+                        newLTImage = datastructure.Coordinates(x0, y0, x1, y1)
                         page.LTImageList.append(newLTImage)
                         save_figure(inner_obj, page, figureIndex, args)
 
@@ -151,14 +112,14 @@ def search_page(page, args):
                 elif isinstance(inner_obj, LTCurve):
                     index = index + 1
                     x0, y0, x1, y1 = inner_obj.bbox[0], inner_obj.bbox[1], inner_obj.bbox[2], inner_obj.bbox[3]
-                    newLTCurve = Coordinates(x0, y0, x1, y1)
+                    newLTCurve = datastructure.Coordinates(x0, y0, x1, y1)
                     page.LTCurveList.append(newLTCurve)
 
 
         if isinstance(lobj, LTLine):
             index = index + 1
             x0, y0, x1, y1 = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3]
-            newLTLine = Coordinates(x0, y0, x1, y1)
+            newLTLine = datastructure.Coordinates(x0, y0, x1, y1)
             page.LTLineList.append(newLTLine)
 
 
@@ -168,21 +129,21 @@ def search_page(page, args):
                 if isinstance(obj, LTTextLine):
                     index = index + 1
                     x0, y0, x1, y1 = obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]
-                    newLTTextBox = Text_Line_Coordinates(x0, y0, x1, y1, obj)
+                    newLTTextBox = datastructure.Text_Line_Coordinates(x0, y0, x1, y1, obj)
                     page.LTTextLineList.append(newLTTextBox)
     
 def make_page(page: PDF_page):
-    result = datastructures.Page(page.image_number)
+    result = datastructure.Page(page.image_number)
     image_and_rectangle_list = page.LTImageList
     image_and_rectangle_list.extend(page.LTRectList)
-    result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, image_and_rectangle_list), datastructures.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructures.TableSegment))
+    result.add_from_lists([], convert_to_datastructure(convert_to_pixel_height(page, image_and_rectangle_list), datastructure.ImageSegment), convert_to_datastructure(convert_to_pixel_height(page, page.TableCoordinates), datastructure.TableSegment))
     return result
 
 def convert_to_pixel_height(page: PDF_page, object_list: list):
     result_elements = []
     if object_list is not None:
         for element in object_list:
-            result_elements.append(datastructures.Coordinates(page.actualWidthModifier * element.x0,
+            result_elements.append(datastructure.Coordinates(page.actualWidthModifier * element.x0,
                                                             page.actualHeightModifier * element.y1,
                                                             page.actualWidthModifier * element.x1,
                                                             page.actualHeightModifier * element.y0))
@@ -219,15 +180,15 @@ def save_figure(lobj, page, figureIndex, args):
         file_obj.write(lobj.stream.get_rawdata())
         file_obj.close()
 
-def Flip_Y_Coordinates(page):
-    Flip_Y_Coordinate(page, page.LTImageList)
-    Flip_Y_Coordinate(page, page.LTRectList)
-    Flip_Y_Coordinate(page, page.LTRectLineList)
-    Flip_Y_Coordinate(page, page.LTCurveList)
-    Flip_Y_Coordinate(page, page.LTLineList)
-    Flip_Y_Coordinate(page, page.LTTextLineList)
+def flip_y_coordinates(page):
+    flip_y_coordinate(page, page.LTImageList)
+    flip_y_coordinate(page, page.LTRectList)
+    flip_y_coordinate(page, page.LTRectLineList)
+    flip_y_coordinate(page, page.LTCurveList)
+    flip_y_coordinate(page, page.LTLineList)
+    flip_y_coordinate(page, page.LTTextLineList)
 
-def Flip_Y_Coordinate(page, object_List):
+def flip_y_coordinate(page, object_List):
     for element in object_List:
         element.y0 = page.PDFfile_height - element.y0
         element.y1 = page.PDFfile_height - element.y1
@@ -276,10 +237,6 @@ def paint(image, page, objectList, color, thickness):
         image = cv2.rectangle(image, start_point, end_point, color, thickness)
     
     return image
-
-def look_through_line_lists(page, args):
-    look_through_LTRectLine_list(page, args)
-
 
 def look_through_LTRectLine_list(page, args):
     #This function has a very large time complexity.
@@ -364,7 +321,7 @@ def return_retangle_coordinates_for_table(dicelement):
             upper_right_y1 = round(element.y1)
         index = index + 1
     
-    table_coordinate = Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
+    table_coordinate = datastructure.Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
     return table_coordinate
 
 def check_text_objects(page):
@@ -414,13 +371,3 @@ def remove_text_within(page, object_List):
             #Should there be a check which also deletes it if it starts before and ends after the object (goes through)? -Mette #TODO
         if(element_Found == True):
             continue
-
-if __name__ == '__main__':
-    # Arguments
-    argparser = argparse.ArgumentParser(description="WIP")
-    argparser.add_argument("-i", "--input", action="store", default=os.path.join(os.getcwd(), 'src'), help="Path to input folder")
-    argparser.add_argument("-o", "--output", action="store", default=os.path.join(os.getcwd(), 'out'), help="Path to output folder")
-    argparser.add_argument("-c", "--clean", action="store", type=bool, default=False, help="Activate nice mode.") #NOTE: What does this mean?
-    args = argparser.parse_args()
-
-    main(args)
