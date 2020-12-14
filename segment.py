@@ -23,7 +23,6 @@ def segment_documents(args: str):
     """
     Does document segmentation of a pdf file and produces a json file with the information found.
     """
-    start = time.perf_counter()
     tmp_folder = os.path.join(args.output, "tmp")
     IO_handler.folder_prep(args.output, args.clean)
     pdf2png.multi_convert_dir_to_files(args.input, os.path.join(tmp_folder, 'images'))  
@@ -42,8 +41,6 @@ def segment_documents(args: str):
 
     if args.temporary is False:
         shutil.rmtree(tmp_folder)
-    end = time.perf_counter()
-
 
 def segment_document(file: str, args):
     """
