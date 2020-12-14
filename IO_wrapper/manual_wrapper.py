@@ -96,18 +96,13 @@ def visit_subsections(root: SegmentedPDF.Section):
     Recursive visitor for the sections and their subsections.
     """
     if root.Sections is not None:
-        schema_section = []
         for section in root.Sections:
             paragraph = Schema_Paragraph(section.Text)
             if (section.StartingPage == section.EndingPage):
                 page = str(section.StartingPage)
             else:
                 page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
-            schema_section.append(Schema_Section(section.Title, page, paragraph, visit_subsections(section)))
-        if len(schema_section) == 0: #Remove empty lists
-            return None
-        else:
-            return schema_section
+            return Schema_Section(section.Title, page, paragraph, visit_subsections(section))
     return None
 
 def create_illustrations(pages):
