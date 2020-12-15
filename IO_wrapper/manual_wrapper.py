@@ -96,14 +96,14 @@ def visit_subsections(node: SegmentedPDF.Section):
     Recursive visitor for the sections and their subsections.
     """
     schema_sections = []
-    if node.Sections is not None:
+    if (node.Sections != []):
         for section in node.Sections:
             if (section.StartingPage == section.EndingPage):
                 page = str(section.StartingPage)
             else:
                 page = str(str(section.StartingPage) + "-" + str(section.EndingPage))
             subsection = visit_subsections(section)
-            if (subsection is not None):
+            if (subsection != []):
                 schema_sections.append(Schema_Section(section.Title, page, Schema_Paragraph(section.Text), subsection))
         return schema_sections
     return None
