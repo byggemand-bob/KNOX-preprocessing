@@ -64,16 +64,20 @@ def segment_document(file: str, args):
             #Only pages without a COLLOSAL amount of lines will be grouped. 
             #Otherwise the segmentation will take too long.
             miner.look_through_LTRectLine_list(page, args)
-        miner.check_text_objects(page)
         image_path = os.path.join(args.output, "tmp", 'images', page.image_name)
         mined_page = miner.make_page(page)
 
         if args.machine is True:
             infered_page = infer_page(image_path, args.accuracy)
+            # miner.remove_text_within(page, [element.coordinates for element in infered_page.images])
+            # miner.remove_text_within(page, [element.coordinates for element in infered_page.tables])
             result_page = merge_pages(mined_page, infered_page)
         else:
             result_page = mined_page
         
+        miner.remove_text_within(page, [element.coordinates for element in result_page.images])
+        miner.remove_text_within(page, [element.coordinates for element in result_page.tables])
+
         remove_duplicates_from_list(result_page.images)
         remove_duplicates_from_list(result_page.tables)
         produce_data_from_coords(result_page, image_path, output_path)

@@ -338,31 +338,31 @@ def remove_text_within(page, object_List):
         element_Found = False
         for object_Element in object_List:
             #If the whole text line is within the object, delete it:
-            if((text_Element.x0 >= object_Element.x0 and text_Element.y0 <= object_Element.y0) and
-               (text_Element.x1 <= object_Element.x1 and text_Element.y1 >= object_Element.y1)):
+            if((text_Element.x0 >= object_Element.x0 and text_Element.y1 <= object_Element.y1) and
+               (text_Element.x1 <= object_Element.x1 and text_Element.y0 >= object_Element.y0)):
                 page.LTTextLineList.remove(text_Element)
                 element_Found = True
                 break
             #If the text line starts within the object (per x-coordinates), also delete it:
             elif((text_Element.x0 <= object_Element.x1 and text_Element.x0 >= object_Element.x0) and 
-                 (text_Element.y0 <= object_Element.y0 and text_Element.y1 >= object_Element.y1)):
+                 (text_Element.y1 <= object_Element.y1 and text_Element.y0 >= object_Element.y0)):
                 page.LTTextLineList.remove(text_Element)
                 element_Found = True
                 break
             #If the text line ends within the object (per x-coordinates), also delete it:
             elif((text_Element.x1 >= object_Element.x0 and text_Element.x1 <= object_Element.x1) and 
-                 (text_Element.y0 <= object_Element.y0 and text_Element.y1 >= object_Element.y1)):
+                 (text_Element.y1 <= object_Element.y1 and text_Element.y0 >= object_Element.y0)):
                 page.LTTextLineList.remove(text_Element)
                 element_Found = True
                 break  
             #If the text lines bottom is partly within the object (per y-coordinates), also delete it:
-            elif((text_Element.y0 >= object_Element.y1 and object_Element.y0 >= text_Element.y0) and 
+            elif((text_Element.y1 >= object_Element.y0 and text_Element.y1 <= object_Element.y1) and 
                  (text_Element.x1 <= object_Element.x1 and text_Element.x0 >= object_Element.x0)):
                 page.LTTextLineList.remove(text_Element)
                 element_Found = True
                 break
             #If the text lines top is partly within the object (per y-coordinates), also delete it:
-            elif((text_Element.y1 <= object_Element.y0 and object_Element.y1 <= text_Element.y1) and 
+            elif((text_Element.y0 <= object_Element.y1 and text_Element.y0 >= object_Element.y0) and 
                  (text_Element.x1 <= object_Element.x1 and text_Element.x0 >= object_Element.x0)):
                 page.LTTextLineList.remove(text_Element)
                 element_Found = True
