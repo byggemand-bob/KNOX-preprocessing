@@ -68,8 +68,9 @@ def create_output(segmented_pdf: SegmentedPDF.SegPDF, pages: ds.Page, file_name,
     pdf_tables = pdf_illustrations[0]
     pdf_images = pdf_illustrations[1]
 
+    published_at = "Data currently unavailable"
     #Create object for JSON
-    export_able_object = Schema_Manual(segmented_pdf.PDFtitle, "Grundfos A/S", "", pdf_sections, pdf_tables, pdf_images)
+    export_able_object = Schema_Manual(segmented_pdf.PDFtitle, "Grundfos A/S", published_at, pdf_sections, pdf_tables, pdf_images)
 
     # Generate
     handler = IOHandler(Generator(app="GrundfosManuals_Handler", generated_at= str(datetime.datetime.now()), version="1.1.0"), schema_path)
