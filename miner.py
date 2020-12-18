@@ -371,18 +371,6 @@ def return_retangle_coordinates_for_table(dicelement):
     table_coordinate = datastructure.Coordinates(lower_left_x0, lower_left_y0, upper_right_x1, upper_right_y1)
     return table_coordinate
 
-def check_text_objects(page):
-    """
-    This function sends the image-, rectangle- and tables lists to 'Remove_text_within' function.
-    """
-    if(len(page.LTTextLineList) > 0):
-        if(len(page.LTImageList) > 0):
-            remove_text_within(page, page.LTImageList)
-        if(len(page.LTRectList) > 0):
-            remove_text_within(page, page.LTRectList)
-        if(len(page.TableCoordinates) > 0):
-            remove_text_within(page, page.TableCoordinates)
-
 def remove_text_within(page, object_List):
     """
     This function removes all text elements inside the objects in the list it is called with.

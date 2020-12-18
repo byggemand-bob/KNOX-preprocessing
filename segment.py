@@ -69,8 +69,6 @@ def segment_document(file: str, args):
 
         if args.machine is True:
             infered_page = infer_page(image_path, args.accuracy)
-            # miner.remove_text_within(page, [element.coordinates for element in infered_page.images])
-            # miner.remove_text_within(page, [element.coordinates for element in infered_page.tables])
             result_page = merge_pages(mined_page, infered_page)
         else:
             result_page = mined_page
@@ -168,22 +166,29 @@ def produce_data_from_coords(page, image_path, output_path):
     """
     Produces matrixes that represent seperate images for all tables and figures on the page.
     """
+    table_list_copy = copy.copy(page.tables)
+    image_list_copy = copy.copy(page.images)
+
     area_treshold = 120 * 120
     image = cv2.imread(image_path)
-    for table_number in range(len(page.tables)):
-        if page.tables[table_number].coordinates.area() > area_treshold and ((page.tables[table_number].coordinates.is_negative() is False)):
+    for table_number in range(len(table_list_copy)):
+        if table_list_copy[table_number].coordinates.area() > area_treshold and ((table_list_copy[table_number].coordinates.is_negative() is False)):
             try: #TODO: Finish try-excepts
-                page.tables[table_number].path = os.path.join(output_path, "tables", os.path.basename(image_path).replace(".png", "_table" + str(table_number) + ".png"))
-                extract_area.extract_area_from_matrix(image, page.tables[table_number].path, page.tables[table_number].coordinates)
+                table_list_copy[table_number].path = os.path.join(output_path, "tables", os.path.basename(image_path).replace(".png", "_table" + str(table_number) + ".png"))
+                extract_area.extract_area_from_matrix(image, table_list_copy[table_number].path, table_list_copy[table_number].coordinates)
             except Exception as x:
                 print(x)
-    for image_number in range(len(page.images)):
-        if (page.images[image_number].coordinates.area() > area_treshold) and (page.images[image_number].coordinates.is_negative() is False):
+        else:
+            page.tables.remove(table_list_copy[table_number])
+    for image_number in range(len(image_list_copy)):
+        if (image_list_copy[image_number].coordinates.area() > area_treshold) and (image_list_copy[image_number].coordinates.is_negative() is False):
             try:
-                page.images[image_number].path = os.path.join(output_path, "images",os.path.basename(image_path).replace(".png", "_image" + str(image_number) + ".png"))
-                extract_area.extract_area_from_matrix(image, page.images[image_number].path, page.images[image_number].coordinates)
+                image_list_copy[image_number].path = os.path.join(output_path, "images",os.path.basename(image_path).replace(".png", "_image" + str(image_number) + ".png"))
+                extract_area.extract_area_from_matrix(image, image_list_copy[image_number].path, image_list_copy[image_number].coordinates)
             except Exception as x:
                 print(x)
+        else:
+            page.images.remove(image_list_copy[image_number])
 
 
 if __name__ == "__main__":
